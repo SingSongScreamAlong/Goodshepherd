@@ -10,6 +10,7 @@ from backend.services.entity_extraction import entity_extraction_service
 from backend.services.summarizer import summarizer_service
 from backend.services.sentiment import sentiment_service
 from backend.services.categorization import categorization_service
+from backend.services.scoring import scoring_service
 from backend.models.event import EventCategory, SentimentEnum, StabilityTrend
 
 logger = get_logger(__name__)
@@ -24,6 +25,7 @@ class EnrichmentPipeline:
         self.summarizer = summarizer_service
         self.sentiment_analyzer = sentiment_service
         self.categorizer = categorization_service
+        self.scorer = scoring_service
 
     def enrich(
         self,
@@ -79,12 +81,27 @@ class EnrichmentPipeline:
             enrichment["sentiment"] = sentiment
             logger.debug("Sentiment analysis complete", sentiment=sentiment.value)
 
-            # 5. Calculate confidence score
-            confidence = self._calculate_confidence(enrichment, text)
+            # 5. Calculate confidence score using scoring service
+            entity_count = sum(len(v) for v in entities.values())
+            has_location = len(entities.get("locations", [])) > 0
+            has_specific_category = category != EventCategory.OTHER
+
+            confidence = self.scorer.calculate_confidence(
+                text_length=len(text),
+                entity_count=entity_count,
+                has_location=has_location,
+                has_specific_category=has_specific_category,
+                has_source=True
+            )
             enrichment["confidence_score"] = confidence
 
-            # 6. Calculate relevance score
-            relevance = self._calculate_relevance(enrichment, text)
+            # 6. Calculate relevance score using scoring service
+            relevance = self.scorer.calculate_relevance(
+                category=category,
+                sentiment=sentiment,
+                entity_list=entities,
+                text_length=len(text)
+            )
             enrichment["relevance_score"] = relevance
 
             # 7. Default stability trend
@@ -106,104 +123,6 @@ class EnrichmentPipeline:
             logger.error("Enrichment pipeline failed", error=str(e), exc_info=True)
             # Return minimal enrichment on failure
             return self._fallback_enrichment(text, title, existing_category)
-
-    def _calculate_confidence(self, enrichment: Dict[str, Any], text: str) -> float:
-        """
-        Calculate confidence score for enrichment.
-
-        Higher confidence when:
-        - Text is longer and more detailed
-        - More entities extracted
-        - Clear sentiment
-        - Clear category match
-
-        Args:
-            enrichment: Enrichment data
-            text: Original text
-
-        Returns:
-            Confidence score (0.0 to 1.0)
-        """
-        score = 0.5  # Base score
-
-        # Text length factor
-        text_length = len(text)
-        if text_length > 500:
-            score += 0.15
-        elif text_length > 200:
-            score += 0.10
-        elif text_length > 100:
-            score += 0.05
-
-        # Entity count factor
-        entity_list = enrichment.get("entity_list", {})
-        total_entities = sum(len(v) for v in entity_list.values())
-        if total_entities >= 10:
-            score += 0.15
-        elif total_entities >= 5:
-            score += 0.10
-        elif total_entities >= 2:
-            score += 0.05
-
-        # Category specificity (not OTHER)
-        category = enrichment.get("category")
-        if category and category != EventCategory.OTHER:
-            score += 0.10
-
-        # Has location
-        if entity_list.get("locations"):
-            score += 0.10
-
-        return min(1.0, score)
-
-    def _calculate_relevance(self, enrichment: Dict[str, Any], text: str) -> float:
-        """
-        Calculate relevance score for missionaries.
-
-        Higher relevance for:
-        - Safety-related (crime, protest, health)
-        - Cultural/religious topics
-        - Infrastructure disruptions
-        - Migration topics
-
-        Args:
-            enrichment: Enrichment data
-            text: Original text
-
-        Returns:
-            Relevance score (0.0 to 1.0)
-        """
-        score = 0.5  # Base relevance
-
-        category = enrichment.get("category")
-
-        # High relevance categories
-        high_relevance = [
-            EventCategory.CRIME,
-            EventCategory.RELIGIOUS_FREEDOM,
-            EventCategory.CULTURAL_TENSION,
-            EventCategory.PROTEST
-        ]
-
-        # Medium relevance categories
-        medium_relevance = [
-            EventCategory.MIGRATION,
-            EventCategory.INFRASTRUCTURE,
-            EventCategory.HEALTH,
-            EventCategory.POLITICAL
-        ]
-
-        if category in high_relevance:
-            score += 0.35
-        elif category in medium_relevance:
-            score += 0.20
-
-        # Negative sentiment increases relevance for safety
-        sentiment = enrichment.get("sentiment")
-        if sentiment == SentimentEnum.NEGATIVE and category in high_relevance:
-            score += 0.15
-
-        return min(1.0, score)
 
     def _fallback_enrichment(
         self,

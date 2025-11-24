@@ -5,6 +5,9 @@ from .summarizer import summarizer_service, SummarizerService
 from .sentiment import sentiment_service, SentimentService
 from .categorization import categorization_service, CategorizationService
 from .enrichment import enrichment_pipeline, EnrichmentPipeline
+from .scoring import scoring_service, ScoringService
+from .clustering import clustering_service, ClusteringService
+from .fusion import fusion_service, FusionService
 
 __all__ = [
     "llm_client",
@@ -19,4 +22,10 @@ __all__ = [
     "CategorizationService",
     "enrichment_pipeline",
     "EnrichmentPipeline",
+    "scoring_service",
+    "ScoringService",
+    "clustering_service",
+    "ClusteringService",
+    "fusion_service",
+    "FusionService",
 ]

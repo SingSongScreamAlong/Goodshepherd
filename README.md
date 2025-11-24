@@ -47,6 +47,11 @@ The platform provides missionaries with continuous awareness of:
   - Sentiment analysis
   - Automatic categorization
   - Confidence & relevance scoring
+- **Intelligence Fusion:**
+  - Event clustering and duplicate detection
+  - Geospatial and temporal similarity
+  - Multi-source fusion
+  - Stability trend assessment
 - **Event Model:** Categorized, geolocated intelligence events
 - **Auth System:** Multi-tenant with organizations and roles
 
@@ -145,6 +150,10 @@ The platform provides missionaries with continuous awareness of:
 ### Events
 - `GET /events` - List events (with filters)
 - `GET /events/{event_id}` - Get single event
+
+### Ingest & Fusion
+- `POST /ingest/fusion/run` - Run clustering & fusion on recent events
+- `GET /ingest/health` - Ingest subsystem health
 
 ### Health
 - `GET /health` - Health check
@@ -268,7 +277,7 @@ Goodshepherd/
 - Alembic migrations
 - Docker setup
 
-### ✅ Phase 2: Enrichment (Current)
+### ✅ Phase 2: Enrichment
 - LLM client implementation (OpenAI)
 - Entity extraction (locations, organizations, groups, topics, keywords)
 - Automatic summarization (1-2 sentence neutral summaries)
@@ -278,10 +287,15 @@ Goodshepherd/
 - Confidence & relevance scoring
 - Integration with RSS worker
 
-### 📋 Phase 3: Intelligence Fusion
-- Event clustering
-- Relevance scoring
-- Duplicate detection
+### ✅ Phase 3: Intelligence Fusion (Current)
+- Advanced scoring algorithms (confidence, relevance, priority)
+- Event clustering (grouping similar events)
+- Duplicate detection (same incident from multiple sources)
+- Geospatial clustering (Haversine distance, location matching)
+- Text similarity (Jaccard similarity)
+- Event fusion (merging related events into unified view)
+- Stability trend assessment
+- Admin endpoint for triggering fusion (POST /ingest/fusion/run)
 
 ### 📋 Phase 4: Frontend - Stream View
 - React setup
@@ -342,15 +356,47 @@ The platform uses AI to automatically enrich raw data:
 Positive, neutral, or negative classification
 
 **Scoring:**
-- **Confidence Score:** Based on text length, entity count, category specificity
-- **Relevance Score:** Higher for safety-related events (crime, protest, health)
+- **Confidence Score:** Based on text length, entity count, category specificity, source verification
+- **Relevance Score:** Higher for safety-related events (crime, protest, health, religious freedom)
+- **Priority Score:** Combines relevance, confidence, recency, and cluster size
 
 **LLM Provider:**
 - Primary: OpenAI (GPT-4 Turbo)
 - Fallback: Basic keyword matching and rule-based analysis
 - All methods include graceful degradation
 
+## 🔗 Intelligence Fusion
+
+The platform automatically detects and merges related events:
+
+**Clustering Algorithm:**
+- **Time Window:** Events within 24 hours can cluster
+- **Location Matching:** Same city/neighborhood or within 50km
+- **Category Match:** Same event category required
+- **Text Similarity:** Jaccard similarity (0.6 threshold)
+
+**Duplicate Detection:**
+- Multiple sources reporting same incident
+- Haversine distance for geospatial proximity
+- Location name normalization and fuzzy matching
+- Entity overlap analysis
+
+**Event Fusion:**
+- Merges multiple reports into unified view
+- Combines source lists from all reports
+- Merges entity lists (deduplicated)
+- Uses best summary (highest confidence)
+- Averages scores with multi-source boost
+- Assesses stability trend over time
+
+**Running Fusion:**
+```bash
+# Trigger fusion for events from last 24 hours
+curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
+  -H "Authorization: Bearer <token>"
+```
+
 ---
 
-**Version:** 0.2.0 (Phase 2)
+**Version:** 0.3.0 (Phase 3)
 **Status:** Active Development
