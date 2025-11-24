@@ -12,6 +12,7 @@ from backend.core.logging import get_logger
 from backend.core.database import SessionLocal
 from backend.models.source import Source
 from backend.models.event import Event, EventCategory
+from backend.services.enrichment import enrichment_pipeline
 
 logger = get_logger(__name__)
 
@@ -19,9 +20,11 @@ logger = get_logger(__name__)
 class RSSWorker:
     """Worker for fetching and processing RSS feeds."""
 
-    def __init__(self):
+    def __init__(self, enable_enrichment: bool = True):
         self.timeout = 30
         self.user_agent = "GoodShepherd/1.0 (OSINT Intelligence Platform)"
+        self.enable_enrichment = enable_enrichment
+        self.enrichment = enrichment_pipeline
 
     def fetch_feed(self, url: str) -> Optional[feedparser.FeedParserDict]:
         """
@@ -79,12 +82,10 @@ class RSSWorker:
             # Build full text
             full_text = f"{title}\n\n{summary}"
 
-            # Create event data
+            # Base event data
             event_data = {
                 "timestamp": timestamp,
-                "summary": title[:500],  # Limit to 500 chars
                 "full_text": full_text,
-                "category": EventCategory.OTHER,  # Default category, will be enriched later
                 "source_list": [
                     {
                         "name": source_name,
@@ -92,8 +93,40 @@ class RSSWorker:
                         "fetched_at": datetime.utcnow().isoformat()
                     }
                 ],
-                "confidence_score": 0.5,  # Default confidence
             }
+
+            # Apply enrichment if enabled
+            if self.enable_enrichment:
+                try:
+                    enrichment = self.enrichment.enrich(text=full_text, title=title)
+                    event_data.update(enrichment)
+                    logger.debug(
+                        "Event enriched",
+                        category=enrichment.get("category"),
+                        sentiment=enrichment.get("sentiment"),
+                        confidence=enrichment.get("confidence_score")
+                    )
+                except Exception as enrich_error:
+                    logger.warning(
+                        "Enrichment failed, using fallback",
+                        error=str(enrich_error),
+                        source=source_name
+                    )
+                    # Fallback to basic data
+                    event_data.update({
+                        "summary": title[:500],
+                        "category": EventCategory.OTHER,
+                        "confidence_score": 0.3,
+                        "relevance_score": 0.5,
+                    })
+            else:
+                # No enrichment - use basic data
+                event_data.update({
+                    "summary": title[:500],
+                    "category": EventCategory.OTHER,
+                    "confidence_score": 0.3,
+                    "relevance_score": 0.5,
+                })
 
             return event_data
 

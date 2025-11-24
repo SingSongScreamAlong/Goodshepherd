@@ -41,7 +41,12 @@ The platform provides missionaries with continuous awareness of:
 
 ### Key Components
 - **Ingest Workers:** Autonomous fetching from RSS, APIs, social media
-- **LLM Layer:** Entity extraction, summarization, sentiment analysis
+- **LLM Enrichment Layer:**
+  - Entity extraction (locations, organizations, groups, topics, keywords)
+  - Automatic summarization
+  - Sentiment analysis
+  - Automatic categorization
+  - Confidence & relevance scoring
 - **Event Model:** Categorized, geolocated intelligence events
 - **Auth System:** Multi-tenant with organizations and roles
 
@@ -204,14 +209,18 @@ pytest
 Run specific test file:
 ```bash
 pytest tests/test_events_api.py
+pytest tests/test_enrichment.py
 ```
+
+Note: Enrichment tests will use fallback methods if no OpenAI API key is configured.
 
 ## 📊 Ingestion Sources
 
-### Phase 1 (Current)
+### Phase 1-2 (Current)
 - RSS feeds (configurable)
+- Automatic enrichment with LLM analysis
 
-### Phase 2+ (Planned)
+### Phase 3+ (Planned)
 - **Government:** EU Home Affairs, Europol, UNHCR, WHO
 - **News:** Reuters, AP, BBC, Politico Europe
 - **Crisis:** GDACS, MeteoAlarm, EMSC
@@ -251,7 +260,7 @@ Goodshepherd/
 
 ## 🚧 Development Phases
 
-### ✅ Phase 1: Foundation (Current)
+### ✅ Phase 1: Foundation
 - Backend skeleton with FastAPI
 - Auth system (users, orgs, roles)
 - Event model with categories
@@ -259,11 +268,15 @@ Goodshepherd/
 - Alembic migrations
 - Docker setup
 
-### 📋 Phase 2: Enrichment (Next)
-- LLM client implementation
-- Entity extraction
-- Summarization
-- Sentiment analysis
+### ✅ Phase 2: Enrichment (Current)
+- LLM client implementation (OpenAI)
+- Entity extraction (locations, organizations, groups, topics, keywords)
+- Automatic summarization (1-2 sentence neutral summaries)
+- Sentiment analysis (positive/neutral/negative)
+- Automatic categorization (12 event categories)
+- Enrichment pipeline coordinator
+- Confidence & relevance scoring
+- Integration with RSS worker
 
 ### 📋 Phase 3: Intelligence Fusion
 - Event clustering
@@ -311,7 +324,33 @@ This is a mission-critical platform. All contributions must:
 
 Built with care for missionaries serving in Europe.
 
+## 🤖 LLM Enrichment
+
+The platform uses AI to automatically enrich raw data:
+
+**Entity Extraction:**
+- Locations (cities, neighborhoods, countries)
+- Organizations (agencies, NGOs, parties)
+- Groups (protesters, residents, migrants)
+- Topics (immigration, policy, religion)
+- Keywords (key phrases)
+
+**Automatic Categorization:**
+12 categories: protest, crime, religious_freedom, cultural_tension, political, infrastructure, health, migration, economic, weather, community_event, other
+
+**Sentiment Analysis:**
+Positive, neutral, or negative classification
+
+**Scoring:**
+- **Confidence Score:** Based on text length, entity count, category specificity
+- **Relevance Score:** Higher for safety-related events (crime, protest, health)
+
+**LLM Provider:**
+- Primary: OpenAI (GPT-4 Turbo)
+- Fallback: Basic keyword matching and rule-based analysis
+- All methods include graceful degradation
+
 ---
 
-**Version:** 0.1.0 (Phase 1)
+**Version:** 0.2.0 (Phase 2)
 **Status:** Active Development
