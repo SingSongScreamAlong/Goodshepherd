@@ -1,7 +1,7 @@
 /**
  * Authentication context and hooks.
  */
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiClient } from '../utils/api';
 import { User, LoginRequest, RegisterRequest, AuthResponse } from '../types';
 
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterRequest) => {
     try {
-      const newUser = await apiClient.post<User>('/auth/register', data);
+      await apiClient.post<User>('/auth/register', data);
 
       // Auto-login after registration
       await login({ email: data.email, password: data.password });

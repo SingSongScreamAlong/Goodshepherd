@@ -35,9 +35,12 @@ The platform provides missionaries with continuous awareness of:
 - **Workers:** Celery/APScheduler for autonomous ingestion
 
 ### Frontend
-- **Framework:** React + TypeScript (Phase 4+)
-- **Mapping:** Mapbox GL / Leaflet
-- **UI:** Modern, simple interface for non-technical users
+- **Framework:** React 18 + TypeScript
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS
+- **Routing:** React Router
+- **UI:** Clean, intuitive interface for non-technical users
+- **Deployment:** Nginx (production-ready Docker setup)
 
 ### Key Components
 - **Ingest Workers:** Autonomous fetching from RSS, APIs, social media
@@ -97,8 +100,9 @@ The platform provides missionaries with continuous awareness of:
    curl http://localhost:8000/health
    ```
 
-7. **Access API documentation**
-   - Swagger UI: http://localhost:8000/docs
+7. **Access the application**
+   - Frontend: http://localhost (or http://localhost:80)
+   - API Documentation: http://localhost:8000/docs
    - ReDoc: http://localhost:8000/redoc
 
 ### Local Development Setup
@@ -287,7 +291,7 @@ Goodshepherd/
 - Confidence & relevance scoring
 - Integration with RSS worker
 
-### ✅ Phase 3: Intelligence Fusion (Current)
+### ✅ Phase 3: Intelligence Fusion
 - Advanced scoring algorithms (confidence, relevance, priority)
 - Event clustering (grouping similar events)
 - Duplicate detection (same incident from multiple sources)
@@ -297,10 +301,20 @@ Goodshepherd/
 - Stability trend assessment
 - Admin endpoint for triggering fusion (POST /ingest/fusion/run)
 
-### 📋 Phase 4: Frontend - Stream View
-- React setup
-- Authentication UI
-- Event timeline/stream
+### ✅ Phase 4: Frontend - Stream View (Current)
+- React 18 + TypeScript + Vite setup
+- Tailwind CSS for styling
+- Authentication UI (login/register pages)
+- Protected routes with auth guards
+- Event timeline/stream view with real-time updates
+- Event cards with enriched data display
+- Filtering system (category, sentiment, location, relevance)
+- Event pagination and "Load More" functionality
+- Expandable event details with full text and sources
+- Multi-source event indicators
+- Entity display (locations, organizations, topics)
+- Responsive design with loading and error states
+- Docker deployment configuration
 
 ### 📋 Phase 5: Frontend - Map View
 - Geospatial visualization
@@ -398,5 +412,5 @@ curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
 
 ---
 
-**Version:** 0.3.0 (Phase 3)
+**Version:** 0.4.0 (Phase 4)
 **Status:** Active Development
