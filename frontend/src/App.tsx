@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import StreamView from './pages/StreamView';
+import EventMap from './pages/EventMap';
 
 export default function App() {
   return (
@@ -25,6 +26,16 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <StreamView />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <EventMap />
                 </Layout>
               </ProtectedRoute>
             }

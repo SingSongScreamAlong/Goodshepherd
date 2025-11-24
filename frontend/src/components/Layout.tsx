@@ -1,8 +1,7 @@
 /**
  * Main layout component with navigation.
  */
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 interface LayoutProps {
@@ -12,6 +11,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -34,11 +34,25 @@ export default function Layout({ children }: LayoutProps) {
               <div className="hidden md:flex ml-10 space-x-8">
                 <Link
                   to="/"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                  className={`px-3 py-2 text-sm font-medium ${
+                    location.pathname === '/'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
                 >
                   Stream
                 </Link>
-                {/* Future: Add Map, Dossiers, Dashboard links */}
+                <Link
+                  to="/map"
+                  className={`px-3 py-2 text-sm font-medium ${
+                    location.pathname === '/map'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  Map
+                </Link>
+                {/* Future: Add Dossiers, Dashboard links */}
               </div>
             </div>
 
@@ -73,7 +87,7 @@ export default function Layout({ children }: LayoutProps) {
             The Good Shepherd - OSINT Intelligence Platform for Missionaries in Europe
           </p>
           <p className="text-center text-xs text-gray-400 mt-1">
-            Version 0.3.0 | Read-only intelligence gathering
+            Version 0.5.0 | Read-only intelligence gathering
           </p>
         </div>
       </footer>

@@ -39,6 +39,7 @@ The platform provides missionaries with continuous awareness of:
 - **Build Tool:** Vite
 - **Styling:** Tailwind CSS
 - **Routing:** React Router
+- **Mapping:** Leaflet + React-Leaflet
 - **UI:** Clean, intuitive interface for non-technical users
 - **Deployment:** Nginx (production-ready Docker setup)
 
@@ -301,7 +302,7 @@ Goodshepherd/
 - Stability trend assessment
 - Admin endpoint for triggering fusion (POST /ingest/fusion/run)
 
-### ✅ Phase 4: Frontend - Stream View (Current)
+### ✅ Phase 4: Frontend - Stream View
 - React 18 + TypeScript + Vite setup
 - Tailwind CSS for styling
 - Authentication UI (login/register pages)
@@ -316,10 +317,18 @@ Goodshepherd/
 - Responsive design with loading and error states
 - Docker deployment configuration
 
-### 📋 Phase 5: Frontend - Map View
-- Geospatial visualization
-- Cluster display
-- Interactive filtering
+### ✅ Phase 5: Frontend - Map View (Current)
+- Interactive Leaflet map with OpenStreetMap tiles
+- Geospatial event visualization with custom markers
+- Color-coded markers by event category (12 distinct colors)
+- Click-to-view event popups with full details
+- Cluster indicators for multi-source events
+- Auto-fitting map bounds to display all events
+- Event count overlay and statistics
+- Full filter integration (category, sentiment, location, relevance)
+- Responsive map layout with legend
+- Navigation between Stream and Map views
+- Handles events without geolocation gracefully
 
 ### 📋 Phase 6: Dossiers & Watchlists
 - Living entity/location profiles
@@ -412,5 +421,5 @@ curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
 
 ---
 
-**Version:** 0.4.0 (Phase 4)
+**Version:** 0.5.0 (Phase 5)
 **Status:** Active Development
