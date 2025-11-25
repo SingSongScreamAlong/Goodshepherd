@@ -3,6 +3,8 @@
  */
 import { useDashboard } from '../hooks/useDashboard';
 import StatCard from '../components/StatCard';
+import InfoTooltip from '../components/InfoTooltip';
+import EmptyState, { EmptyIcons } from '../components/EmptyState';
 import { getCategoryLabel, getCategoryColor } from '../utils/formatting';
 import { formatRelativeTime } from '../utils/formatting';
 
@@ -39,6 +41,25 @@ export default function Dashboard() {
     ? ((summary.events_today - weekAverage) / weekAverage) * 100
     : 0;
 
+  // Check if we have any data at all
+  const hasAnyData = summary.total_events > 0;
+
+  if (!hasAnyData) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Today's intelligence picture and recent trends</p>
+        </div>
+        <EmptyState
+          icon={EmptyIcons.Dashboard}
+          title="No intelligence data yet"
+          description="Once the RSS worker starts ingesting events, your dashboard will populate with metrics, trends, and high-priority events. Configure your RSS feeds and start the worker to begin."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -50,7 +71,12 @@ export default function Dashboard() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
-          label="Events Today"
+          label={
+            <span className="flex items-center space-x-1">
+              <span>Events Today</span>
+              <InfoTooltip content="Total intelligence events from the last 24 hours. Events are GLOBAL (shared across all organizations)." />
+            </span>
+          }
           value={summary.events_today}
           color="blue"
           icon={
@@ -70,7 +96,12 @@ export default function Dashboard() {
         />
 
         <StatCard
-          label="High Relevance Today"
+          label={
+            <span className="flex items-center space-x-1">
+              <span>High Relevance Today</span>
+              <InfoTooltip content="Events with relevance score ≥ 0.7. Relevance is higher for safety-related categories (crime, protest, health, religious freedom)." />
+            </span>
+          }
           value={summary.high_relevance_today}
           color="red"
           icon={
@@ -86,7 +117,12 @@ export default function Dashboard() {
         />
 
         <StatCard
-          label="Events This Week"
+          label={
+            <span className="flex items-center space-x-1">
+              <span>Events This Week</span>
+              <InfoTooltip content="Total events from the last 7 days. Trend shows comparison to previous week average." />
+            </span>
+          }
           value={summary.events_week}
           color="green"
           icon={
@@ -102,7 +138,12 @@ export default function Dashboard() {
         />
 
         <StatCard
-          label="Active Dossiers"
+          label={
+            <span className="flex items-center space-x-1">
+              <span>Active Dossiers</span>
+              <InfoTooltip content="Dossiers with events in the last 7 days vs total dossiers. Dossiers are organization-specific." />
+            </span>
+          }
           value={`${summary.active_dossiers}/${summary.total_dossiers}`}
           color="purple"
           icon={
@@ -121,9 +162,12 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Category Distribution */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Category Distribution (7 Days)
-          </h2>
+          <div className="flex items-center space-x-2 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Category Distribution (7 Days)
+            </h2>
+            <InfoTooltip content="Breakdown of events by category over the last week. Categories include protest, crime, religious freedom, migration, and more." />
+          </div>
           {Object.keys(summary.category_distribution).length > 0 ? (
             <div className="space-y-3">
               {Object.entries(summary.category_distribution)
@@ -153,15 +197,18 @@ export default function Dashboard() {
                 ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No events in the last 7 days</p>
+            <p className="text-sm text-gray-500 text-center py-8">No events in the last 7 days</p>
           )}
         </div>
 
         {/* Sentiment Distribution */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Sentiment Distribution (7 Days)
-          </h2>
+          <div className="flex items-center space-x-2 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Sentiment Distribution (7 Days)
+            </h2>
+            <InfoTooltip content="Sentiment analysis classifies events as positive, neutral, or negative based on LLM analysis of event text." />
+          </div>
           {Object.keys(summary.sentiment_distribution).length > 0 ? (
             <div className="space-y-4">
               {Object.entries(summary.sentiment_distribution).map(([sentiment, count]) => {
@@ -194,16 +241,19 @@ export default function Dashboard() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No sentiment data available</p>
+            <p className="text-sm text-gray-500 text-center py-8">No sentiment data available</p>
           )}
         </div>
       </div>
 
       {/* Top Locations */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Most Active Locations (7 Days)
-        </h2>
+        <div className="flex items-center space-x-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Most Active Locations (7 Days)
+          </h2>
+          <InfoTooltip content="Geographic locations with the most event activity in the last week." />
+        </div>
         {summary.top_locations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {summary.top_locations.map((loc, idx) => (
@@ -223,19 +273,22 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No location data available</p>
+          <p className="text-sm text-gray-500 text-center py-8">No location data available</p>
         )}
       </div>
 
       {/* Recent Highlights */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Today's High-Priority Events
-        </h2>
+        <div className="flex items-center space-x-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Today's High-Priority Events
+          </h2>
+          <InfoTooltip content="Events from today with high relevance scores (≥0.7). These require immediate attention." />
+        </div>
         {summary.recent_highlights.length > 0 ? (
           <div className="space-y-3">
             {summary.recent_highlights.map((event) => (
-              <div key={event.event_id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div key={event.event_id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex-shrink-0">
                   <div className="w-2 h-2 mt-2 bg-red-500 rounded-full"></div>
                 </div>
@@ -249,9 +302,11 @@ export default function Dashboard() {
                     <span className="text-xs text-gray-500">
                       {formatRelativeTime(event.timestamp)}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      Relevance: {(event.relevance_score * 100).toFixed(0)}%
-                    </span>
+                    {event.relevance_score && (
+                      <span className="text-xs text-gray-500">
+                        Relevance: {(event.relevance_score * 100).toFixed(0)}%
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-gray-900">{event.summary}</p>
                 </div>
@@ -259,7 +314,9 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No high-priority events today</p>
+          <p className="text-sm text-gray-500 text-center py-8">
+            No high-priority events today. Check back later or adjust your relevance threshold.
+          </p>
         )}
       </div>
     </div>

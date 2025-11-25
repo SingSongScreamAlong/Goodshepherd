@@ -3,6 +3,7 @@
  */
 import { useState } from 'react';
 import { Event } from '../types';
+import EventFeedback from './EventFeedback';
 import {
   formatRelativeTime,
   formatDate,
@@ -219,6 +220,11 @@ export default function EventCard({ event }: EventCardProps) {
             </p>
           </div>
         )}
+
+        {/* Footer with feedback */}
+        <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end">
+          <EventFeedback eventId={event.event_id} />
+        </div>
       </div>
     </div>
   );

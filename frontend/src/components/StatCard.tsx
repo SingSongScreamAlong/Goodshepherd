@@ -2,7 +2,7 @@
  * StatCard component - displays a metric with label and optional trend.
  */
 interface StatCardProps {
-  label: string;
+  label: string | React.ReactNode;
   value: string | number;
   icon?: React.ReactNode;
   trend?: {
