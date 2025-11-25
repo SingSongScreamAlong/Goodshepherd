@@ -4,11 +4,27 @@
 
 The Good Shepherd uses a hybrid multi-tenant model that balances shared intelligence (events are global) with organization-specific configurations (dossiers and watchlists are private).
 
+## ⚠️ CRITICAL: Data Scoping Rules
+
+**Events are GLOBAL** - they represent the real world and have **NO** `organization_id` field.
+**Dossiers are ORG-SCOPED** - each org has private dossiers **WITH** `organization_id` field.
+**Watchlists are ORG+USER-SCOPED** - personal/org watchlists **WITH** `organization_id` field.
+
+### Common Mistake to Avoid
+
+❌ **WRONG:** `db.query(Event).filter(Event.organization_id == org_id)`
+✅ **RIGHT:** `db.query(Event)` (no org filtering - events are global!)
+
+❌ **WRONG:** `db.query(Dossier)` (missing org filter!)
+✅ **RIGHT:** `db.query(Dossier).filter(Dossier.organization_id == org_id)`
+
 ## Tenancy Model
 
 ### Global (Shared Across Organizations)
 
 **Events** are GLOBAL - they represent real-world occurrences and are visible to all authenticated users.
+
+**IMPORTANT:** The Event model does NOT have an `organization_id` field. Do not filter Event queries by organization.
 
 **Rationale:**
 - Events describe public incidents from public sources (OSINT)
