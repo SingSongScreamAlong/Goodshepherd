@@ -50,6 +50,7 @@ class User(Base):
         secondary=user_organization,
         back_populates="users"
     )
+    watchlists = relationship("Watchlist", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email})>"
@@ -77,6 +78,8 @@ class Organization(Base):
         secondary=user_organization,
         back_populates="organizations"
     )
+    dossiers = relationship("Dossier", back_populates="organization", cascade="all, delete-orphan")
+    watchlists = relationship("Watchlist", back_populates="organization", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Organization(id={self.id}, name={self.name})>"

@@ -94,3 +94,79 @@ export interface EventFilters {
   page?: number;
   page_size?: number;
 }
+
+// Dossier and Watchlist Types
+
+export type DossierType = 'location' | 'organization' | 'group' | 'topic' | 'person';
+
+export type WatchlistPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export interface Dossier {
+  id: string;
+  organization_id: string;
+  name: string;
+  dossier_type: DossierType;
+  description?: string;
+  aliases?: string[];
+  location_lat?: string;
+  location_lon?: string;
+  location_name?: string;
+  tags?: string[];
+  notes?: string;
+  event_count: number;
+  last_event_timestamp?: string;
+  first_event_timestamp?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DossierStats {
+  dossier_id: string;
+  name: string;
+  dossier_type: DossierType;
+  event_count: number;
+  recent_event_count_7d: number;
+  recent_event_count_30d: number;
+  last_event_timestamp?: string;
+  categories: Record<string, number>;
+  sentiment_distribution: Record<string, number>;
+}
+
+export interface DossierCreate {
+  name: string;
+  dossier_type: DossierType;
+  description?: string;
+  aliases?: string[];
+  location_lat?: string;
+  location_lon?: string;
+  location_name?: string;
+  tags?: string[];
+  notes?: string;
+}
+
+export interface Watchlist {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  priority: WatchlistPriority;
+  is_active: boolean;
+  notification_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  dossier_count: number;
+}
+
+export interface WatchlistWithDossiers extends Watchlist {
+  dossiers: Dossier[];
+}
+
+export interface WatchlistCreate {
+  name: string;
+  description?: string;
+  priority?: WatchlistPriority;
+  is_active?: boolean;
+  notification_enabled?: boolean;
+  dossier_ids?: string[];
+}
