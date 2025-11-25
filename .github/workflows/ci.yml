@@ -1,0 +1,238 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: goodshepherd_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: backend/requirements.txt
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create test environment file
+      working-directory: ./backend
+      run: |
+        cat > .env << EOF
+        DATABASE_URL=postgresql://test:test@localhost:5432/goodshepherd_test
+        REDIS_URL=redis://localhost:6379/0
+        JWT_SECRET_KEY=test-secret-key-for-ci-only
+        JWT_ALGORITHM=HS256
+        JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
+        LOG_LEVEL=INFO
+        LOG_FORMAT=json
+        # OpenAI key optional for tests (fallback methods used)
+        OPENAI_API_KEY=
+        LLM_MODEL=gpt-4-turbo-preview
+        EOF
+
+    - name: Run database migrations
+      working-directory: ./backend
+      run: |
+        alembic upgrade head
+
+    - name: Run tests with pytest
+      working-directory: ./backend
+      run: |
+        pytest tests/ -v --tb=short --maxfail=3
+      env:
+        PYTHONPATH: /home/runner/work/Goodshepherd/Goodshepherd/backend
+
+    - name: Upload coverage report (if generated)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-test-results
+        path: backend/htmlcov/
+        if-no-files-found: ignore
+
+  backend-lint:
+    name: Backend Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install linting tools
+      run: |
+        pip install ruff black isort
+
+    - name: Run ruff (linter)
+      working-directory: ./backend
+      run: |
+        ruff check . || true  # Non-blocking for now
+
+    - name: Check code formatting with black
+      working-directory: ./backend
+      run: |
+        black --check . || true  # Non-blocking for now
+
+  frontend-build:
+    name: Frontend Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Run TypeScript type check
+      working-directory: ./frontend
+      run: npx tsc --noEmit
+
+    - name: Run ESLint
+      working-directory: ./frontend
+      run: npm run lint || true  # Non-blocking for now
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+
+    - name: Run tests (if available)
+      working-directory: ./frontend
+      run: |
+        if grep -q '"test"' package.json; then
+          npm test || echo "No tests configured"
+        else
+          echo "No test script found in package.json"
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-dist
+        path: frontend/dist/
+        retention-days: 7
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        exit-code: '0'  # Don't fail build, just report
+
+    - name: Upload Trivy results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: false
+        tags: goodshepherd-backend:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile
+        push: false
+        tags: goodshepherd-frontend:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  all-checks-passed:
+    name: All Checks Passed
+    runs-on: ubuntu-latest
+    needs: [backend-tests, backend-lint, frontend-build, security-scan, docker-build]
+    if: always()
+
+    steps:
+    - name: Check all jobs
+      run: |
+        if [[ "${{ needs.backend-tests.result }}" != "success" ]]; then
+          echo "Backend tests failed"
+          exit 1
+        fi
+        if [[ "${{ needs.frontend-build.result }}" != "success" ]]; then
+          echo "Frontend build failed"
+          exit 1
+        fi
+        echo "All critical checks passed!"

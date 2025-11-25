@@ -274,16 +274,21 @@ Note: Enrichment tests will use fallback methods if no OpenAI API key is configu
 
 ## 📊 Ingestion Sources
 
-### Phase 1-2 (Current)
-- RSS feeds (configurable)
-- Automatic enrichment with LLM analysis
+### ✅ Currently Live
+- **RSS Feeds:** Fully operational with automatic enrichment
+  - European news outlets
+  - Government press releases
+  - Crisis monitoring feeds
+  - NGO updates
 
-### Phase 3+ (Planned)
-- **Government:** EU Home Affairs, Europol, UNHCR, WHO
-- **News:** Reuters, AP, BBC, Politico Europe
-- **Crisis:** GDACS, MeteoAlarm, EMSC
-- **NGO:** MSF, IRC, UN humanitarian feeds
-- **Social:** Twitter/X public search, Reddit, public Telegram
+### 📋 Planned Sources
+- **Government:** EU Home Affairs, Europol, UNHCR, WHO Europe
+- **News APIs:** Reuters, AP, BBC, Politico Europe
+- **Crisis Monitoring:** GDACS, MeteoAlarm, EMSC
+- **NGO Feeds:** MSF, IRC, UN OCHA, Red Cross
+- **Social Media (Public):** Twitter/X public search, Reddit, public Telegram
+
+**For detailed ingestion status and implementation roadmap, see [docs/INGESTION.md](docs/INGESTION.md)**
 
 ## 🔐 Security & Privacy
 
@@ -451,6 +456,12 @@ Goodshepherd/
   - Error tracking and reporting
   - Graceful shutdown handling
 
+## 📚 Documentation
+
+- **[Data Model & Multi-Tenancy](docs/DATA_MODEL.md)** - Understanding org-scoped vs global data
+- **[Ingestion Sources](docs/INGESTION.md)** - Current sources and roadmap
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
+
 ## 📝 Contributing
 
 This is a mission-critical platform. All contributions must:
@@ -459,9 +470,17 @@ This is a mission-critical platform. All contributions must:
 3. Follow existing code style
 4. Document new features
 
+**Note:** This is a private, closed-source project. Contributions are accepted only from authorized developers.
+
 ## 📄 License
 
-[License information to be added]
+**Proprietary and Confidential**
+
+This software is the proprietary and confidential property of The Good Shepherd Project. All rights reserved.
+
+Unauthorized copying, distribution, modification, or use of this software is strictly prohibited. This software may only be used for authorized OSINT intelligence purposes and must not be used for tracking private individuals, intrusion, or any kinetic operations.
+
+See [LICENSE](LICENSE) for full terms.
 
 ## 🙏 Credits
 
