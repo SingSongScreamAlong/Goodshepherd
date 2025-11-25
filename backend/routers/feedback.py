@@ -4,6 +4,7 @@ This data can be used to tune the enrichment and scoring algorithms.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from uuid import UUID
 from pydantic import BaseModel
 from datetime import datetime
@@ -12,6 +13,7 @@ from backend.core.database import get_db
 from backend.core.dependencies import get_current_user
 from backend.models.user import User
 from backend.models.event import Event
+from backend.models.feedback import EventFeedback
 from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -34,9 +36,8 @@ def submit_event_feedback(
     """
     Submit feedback on an event's relevance, classification, or importance.
 
-    This endpoint logs feedback for future use in tuning enrichment algorithms.
-    For now, feedback is logged only; future versions may update event scores
-    or trigger re-classification.
+    Stores feedback in database for future analysis and tuning of enrichment algorithms.
+    Future versions may update event scores or trigger re-classification based on feedback.
 
     Args:
         feedback: Feedback data (event_id, type, optional comment)
@@ -54,9 +55,21 @@ def submit_event_feedback(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # Log feedback (structured logging for future analysis)
+    # Store feedback in database
+    db_feedback = EventFeedback(
+        event_id=feedback.event_id,
+        user_id=current_user.id,
+        feedback_type=feedback.feedback_type,
+        comment=feedback.comment,
+    )
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+
+    # Log feedback (structured logging for analysis)
     logger.info(
         "event_feedback_submitted",
+        feedback_id=str(db_feedback.id),
         event_id=str(feedback.event_id),
         feedback_type=feedback.feedback_type,
         user_id=str(current_user.id),
@@ -68,12 +81,12 @@ def submit_event_feedback(
         timestamp=datetime.utcnow().isoformat(),
     )
 
-    # TODO: Future enhancement - store in dedicated feedback table
     # TODO: Future enhancement - trigger re-classification if "misclassified"
-    # TODO: Future enhancement - adjust event scores based on feedback
+    # TODO: Future enhancement - adjust event scores based on aggregated feedback
 
     return {
         "message": "Feedback submitted successfully",
+        "feedback_id": str(db_feedback.id),
         "event_id": str(feedback.event_id),
         "feedback_type": feedback.feedback_type,
     }
@@ -82,27 +95,42 @@ def submit_event_feedback(
 @router.get("/stats")
 def get_feedback_stats(
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Get feedback statistics (future enhancement).
+    Get feedback statistics.
 
-    Currently returns placeholder data.
-    Future: Return aggregate stats from feedback table.
+    Returns aggregate statistics about feedback submissions, useful for
+    understanding user engagement and data quality metrics.
 
     Args:
         current_user: Current authenticated user
+        db: Database session
 
     Returns:
-        Feedback statistics
+        Feedback statistics including total count and breakdown by type
     """
-    # Placeholder for future implementation
+    # Get total count
+    total_feedback = db.query(func.count(EventFeedback.id)).scalar() or 0
+
+    # Get breakdown by feedback type
+    feedback_by_type_raw = db.query(
+        EventFeedback.feedback_type,
+        func.count(EventFeedback.id).label('count')
+    ).group_by(EventFeedback.feedback_type).all()
+
+    feedback_by_type = {
+        "relevant": 0,
+        "irrelevant": 0,
+        "misclassified": 0,
+        "important": 0,
+    }
+
+    for feedback_type, count in feedback_by_type_raw:
+        if feedback_type in feedback_by_type:
+            feedback_by_type[feedback_type] = count
+
     return {
-        "total_feedback": 0,
-        "feedback_by_type": {
-            "relevant": 0,
-            "irrelevant": 0,
-            "misclassified": 0,
-            "important": 0,
-        },
-        "message": "Feedback statistics will be available in future version",
+        "total_feedback": total_feedback,
+        "feedback_by_type": feedback_by_type,
     }
