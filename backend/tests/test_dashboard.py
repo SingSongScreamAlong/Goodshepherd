@@ -32,7 +32,7 @@ def test_user_and_org(db_session):
     # Create organization
     org = Organization(
         name=f"Test Org {datetime.utcnow().timestamp()}",
-        domain="test.com"
+        description="Test organization for dashboard tests"
     )
     db_session.add(org)
     db_session.commit()
@@ -43,8 +43,9 @@ def test_user_and_org(db_session):
         email=f"testdashboard{datetime.utcnow().timestamp()}@test.com",
         full_name="Test Dashboard User",
         hashed_password="fakehash",
-        organization_id=org.id,
     )
+    # Associate user with organization using the many-to-many relationship
+    user.organizations.append(org)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -70,11 +71,10 @@ def test_dashboard_summary(auth_headers, test_user_and_org, db_session):
     """Test dashboard summary endpoint."""
     user, org = test_user_and_org
 
-    # Create some test events
+    # Create some test events (GLOBAL - no organization_id)
     now = datetime.utcnow()
     events = [
         Event(
-            organization_id=org.id,
             timestamp=now,
             summary="Test event 1",
             category="protest",
@@ -83,7 +83,6 @@ def test_dashboard_summary(auth_headers, test_user_and_org, db_session):
             confidence_score=0.9,
         ),
         Event(
-            organization_id=org.id,
             timestamp=now - timedelta(days=1),
             summary="Test event 2",
             category="crime",

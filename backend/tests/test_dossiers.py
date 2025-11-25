@@ -32,7 +32,7 @@ def test_user_and_org(db_session):
     # Create organization
     org = Organization(
         name=f"Test Org Dossier {datetime.utcnow().timestamp()}",
-        domain="testdossier.com"
+        description="Test organization for dossier tests"
     )
     db_session.add(org)
     db_session.commit()
@@ -43,8 +43,9 @@ def test_user_and_org(db_session):
         email=f"testdossier{datetime.utcnow().timestamp()}@test.com",
         full_name="Test Dossier User",
         hashed_password="fakehash",
-        organization_id=org.id,
     )
+    # Associate user with organization using the many-to-many relationship
+    user.organizations.append(org)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
