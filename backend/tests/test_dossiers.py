@@ -10,7 +10,7 @@ from backend.main import app
 from backend.core.database import SessionLocal
 from backend.models.user import User, Organization
 from backend.models.dossier import Dossier, Watchlist
-from backend.core.auth import create_access_token
+from backend.core.security import create_access_token
 
 
 client = TestClient(app)
