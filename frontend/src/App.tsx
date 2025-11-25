@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import StreamView from './pages/StreamView';
 import EventMap from './pages/EventMap';
+import Dossiers from './pages/Dossiers';
 
 export default function App() {
   return (
@@ -36,6 +37,16 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <EventMap />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dossiers"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dossiers />
                 </Layout>
               </ProtectedRoute>
             }

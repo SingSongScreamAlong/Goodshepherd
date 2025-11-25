@@ -317,7 +317,7 @@ Goodshepherd/
 - Responsive design with loading and error states
 - Docker deployment configuration
 
-### ✅ Phase 5: Frontend - Map View (Current)
+### ✅ Phase 5: Frontend - Map View
 - Interactive Leaflet map with OpenStreetMap tiles
 - Geospatial event visualization with custom markers
 - Color-coded markers by event category (12 distinct colors)
@@ -330,9 +330,21 @@ Goodshepherd/
 - Navigation between Stream and Map views
 - Handles events without geolocation gracefully
 
-### 📋 Phase 6: Dossiers & Watchlists
-- Living entity/location profiles
-- User-defined watchlists
+### ✅ Phase 6: Dossiers & Watchlists (Current)
+- Backend: Dossier and Watchlist models with full CRUD API
+- Database migration: dossiers, watchlists, watchlist_dossier tables
+- 5 dossier types: location, organization, group, topic, person (public officials only)
+- Auto-tracking event statistics (counts, timestamps, 7d/30d trends)
+- Smart entity matching across all entity types with alias support
+- Detailed analytics: category distribution, sentiment analysis
+- User-defined watchlists with priority levels (low/medium/high/critical)
+- Many-to-many dossier-watchlist relationships
+- Frontend: DossierCard, CreateDossierModal, Dossiers page
+- React hooks: useDossiers, useWatchlists for state management
+- Full UI for creating, viewing, editing, and deleting dossiers
+- Search and filter dossiers by type and name
+- Refresh stats manually or automatically
+- OSINT compliant throughout (no private individual tracking)
 
 ### 📋 Phase 7: Dashboard
 - "Today's Picture" view
@@ -421,5 +433,5 @@ curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
 
 ---
 
-**Version:** 0.5.0 (Phase 5)
+**Version:** 0.6.0 (Phase 6)
 **Status:** Active Development
