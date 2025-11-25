@@ -1,18 +1,20 @@
 """
 Events router for querying intelligence events.
+NOTE: Events are GLOBAL (shared across all orgs). No org-scoping on queries.
 """
 from typing import Annotated, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
+from uuid import UUID
 
 from backend.core.database import get_db
+from backend.core.dependencies import get_current_user
 from backend.core.logging import get_logger
 from backend.models.event import Event, EventCategory, SentimentEnum
 from backend.models.user import User
-from backend.routers.auth import get_current_user
 from backend.schemas.event import EventResponse, EventListResponse
 
 logger = get_logger(__name__)
@@ -123,12 +125,9 @@ def get_event(
     Returns:
         Event data
     """
-    from uuid import UUID
-
     try:
         event_uuid = UUID(event_id)
     except ValueError:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid event ID format"
@@ -137,7 +136,6 @@ def get_event(
     event = db.query(Event).filter(Event.id == event_uuid).first()
 
     if not event:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found"

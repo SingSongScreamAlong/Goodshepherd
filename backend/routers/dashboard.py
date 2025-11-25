@@ -1,5 +1,6 @@
 """
 Dashboard API endpoints for analytics and summaries.
+NOTE: Events are GLOBAL (shared across all orgs). Only Dossiers are org-scoped.
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -9,7 +10,7 @@ from typing import Dict, List
 from collections import defaultdict
 
 from backend.core.database import get_db
-from backend.core.dependencies import get_current_user
+from backend.core.dependencies import get_current_user, get_current_org_id
 from backend.models.user import User
 from backend.models.event import Event, EventCategory, SentimentEnum
 from backend.models.dossier import Dossier
@@ -20,16 +21,16 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 @router.get("/summary")
 def get_dashboard_summary(
     current_user: User = Depends(get_current_user),
+    org_id = Depends(get_current_org_id),
     db: Session = Depends(get_db)
 ):
     """
     Get overall dashboard summary with key metrics.
     Returns today's activity, trends, and highlights.
-    """
-    if not current_user.organizations:
-        return {"error": "User not associated with any organization"}
 
-    org_id = current_user.organizations[0].id
+    NOTE: Event metrics are GLOBAL (all orgs see same events).
+    Only dossier counts are org-specific.
+    """
     now = datetime.utcnow()
 
     # Time periods
@@ -37,42 +38,35 @@ def get_dashboard_summary(
     week_start = now - timedelta(days=7)
     month_start = now - timedelta(days=30)
 
-    # Total events
-    total_events = db.query(func.count(Event.event_id)).filter(
-        Event.organization_id == org_id
-    ).scalar() or 0
+    # Total events (GLOBAL - no org filter)
+    total_events = db.query(func.count(Event.id)).scalar() or 0
 
-    # Events today
-    events_today = db.query(func.count(Event.event_id)).filter(
-        Event.organization_id == org_id,
+    # Events today (GLOBAL)
+    events_today = db.query(func.count(Event.id)).filter(
         Event.timestamp >= today_start
     ).scalar() or 0
 
-    # Events this week
-    events_week = db.query(func.count(Event.event_id)).filter(
-        Event.organization_id == org_id,
+    # Events this week (GLOBAL)
+    events_week = db.query(func.count(Event.id)).filter(
         Event.timestamp >= week_start
     ).scalar() or 0
 
-    # Events this month
-    events_month = db.query(func.count(Event.event_id)).filter(
-        Event.organization_id == org_id,
+    # Events this month (GLOBAL)
+    events_month = db.query(func.count(Event.id)).filter(
         Event.timestamp >= month_start
     ).scalar() or 0
 
-    # High relevance events today
-    high_relevance_today = db.query(func.count(Event.event_id)).filter(
-        Event.organization_id == org_id,
+    # High relevance events today (GLOBAL)
+    high_relevance_today = db.query(func.count(Event.id)).filter(
         Event.timestamp >= today_start,
         Event.relevance_score >= 0.7
     ).scalar() or 0
 
-    # Category distribution (last 7 days)
+    # Category distribution (last 7 days) (GLOBAL)
     category_results = db.query(
         Event.category,
-        func.count(Event.event_id)
+        func.count(Event.id)
     ).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= week_start
     ).group_by(Event.category).all()
 
@@ -80,12 +74,11 @@ def get_dashboard_summary(
         cat.value: count for cat, count in category_results if cat
     }
 
-    # Sentiment distribution (last 7 days)
+    # Sentiment distribution (last 7 days) (GLOBAL)
     sentiment_results = db.query(
         Event.sentiment,
-        func.count(Event.event_id)
+        func.count(Event.id)
     ).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= week_start,
         Event.sentiment.isnot(None)
     ).group_by(Event.sentiment).all()
@@ -94,16 +87,15 @@ def get_dashboard_summary(
         sent.value: count for sent, count in sentiment_results if sent
     }
 
-    # Most active locations (last 7 days)
+    # Most active locations (last 7 days) (GLOBAL)
     location_results = db.query(
         Event.location_name,
-        func.count(Event.event_id)
+        func.count(Event.id)
     ).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= week_start,
         Event.location_name.isnot(None)
     ).group_by(Event.location_name).order_by(
-        func.count(Event.event_id).desc()
+        func.count(Event.id).desc()
     ).limit(5).all()
 
     top_locations = [
@@ -111,27 +103,26 @@ def get_dashboard_summary(
         for loc, count in location_results
     ]
 
-    # Total dossiers
+    # Total dossiers (ORG-SCOPED)
     total_dossiers = db.query(func.count(Dossier.id)).filter(
         Dossier.organization_id == org_id
     ).scalar() or 0
 
-    # Active dossiers (with events in last 7 days)
+    # Active dossiers (with events in last 7 days) (ORG-SCOPED)
     active_dossiers = db.query(func.count(Dossier.id)).filter(
         Dossier.organization_id == org_id,
         Dossier.last_event_timestamp >= week_start
     ).scalar() or 0
 
-    # Recent high-priority events
+    # Recent high-priority events (GLOBAL)
     high_priority = db.query(Event).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= today_start,
         Event.relevance_score >= 0.7
     ).order_by(Event.timestamp.desc()).limit(5).all()
 
     recent_highlights = [
         {
-            "event_id": str(e.event_id),
+            "event_id": str(e.id),
             "summary": e.summary,
             "category": e.category.value if e.category else None,
             "relevance_score": e.relevance_score,
@@ -165,20 +156,17 @@ def get_trends(
     """
     Get event trends over time.
     Returns daily event counts, category trends, and sentiment trends.
-    """
-    if not current_user.organizations:
-        return {"error": "User not associated with any organization"}
 
-    org_id = current_user.organizations[0].id
+    NOTE: Event trends are GLOBAL (all orgs see same events).
+    """
     now = datetime.utcnow()
     start_date = now - timedelta(days=days)
 
-    # Daily event counts
+    # Daily event counts (GLOBAL)
     daily_results = db.query(
         func.date(Event.timestamp).label('date'),
-        func.count(Event.event_id).label('count')
+        func.count(Event.id).label('count')
     ).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= start_date
     ).group_by(func.date(Event.timestamp)).order_by('date').all()
 
@@ -187,13 +175,12 @@ def get_trends(
         for date, count in daily_results
     ]
 
-    # Category trends
+    # Category trends (GLOBAL)
     category_daily = db.query(
         func.date(Event.timestamp).label('date'),
         Event.category,
-        func.count(Event.event_id).label('count')
+        func.count(Event.id).label('count')
     ).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= start_date
     ).group_by(func.date(Event.timestamp), Event.category).all()
 
@@ -205,13 +192,12 @@ def get_trends(
                 "count": count
             })
 
-    # Sentiment trends
+    # Sentiment trends (GLOBAL)
     sentiment_daily = db.query(
         func.date(Event.timestamp).label('date'),
         Event.sentiment,
-        func.count(Event.event_id).label('count')
+        func.count(Event.id).label('count')
     ).filter(
-        Event.organization_id == org_id,
         Event.timestamp >= start_date,
         Event.sentiment.isnot(None)
     ).group_by(func.date(Event.timestamp), Event.sentiment).all()
@@ -243,27 +229,23 @@ def get_category_analysis(
 ):
     """
     Get detailed analysis for a specific category.
-    """
-    if not current_user.organizations:
-        return {"error": "User not associated with any organization"}
 
-    org_id = current_user.organizations[0].id
+    NOTE: Category analysis is GLOBAL (all orgs see same events).
+    """
     now = datetime.utcnow()
     start_date = now - timedelta(days=days)
 
-    # Total events in category
-    total = db.query(func.count(Event.event_id)).filter(
-        Event.organization_id == org_id,
+    # Total events in category (GLOBAL)
+    total = db.query(func.count(Event.id)).filter(
         Event.category == category,
         Event.timestamp >= start_date
     ).scalar() or 0
 
-    # Sentiment breakdown
+    # Sentiment breakdown (GLOBAL)
     sentiment_results = db.query(
         Event.sentiment,
-        func.count(Event.event_id)
+        func.count(Event.id)
     ).filter(
-        Event.organization_id == org_id,
         Event.category == category,
         Event.timestamp >= start_date,
         Event.sentiment.isnot(None)
@@ -273,17 +255,16 @@ def get_category_analysis(
         sent.value: count for sent, count in sentiment_results if sent
     }
 
-    # Top locations
+    # Top locations (GLOBAL)
     location_results = db.query(
         Event.location_name,
-        func.count(Event.event_id)
+        func.count(Event.id)
     ).filter(
-        Event.organization_id == org_id,
         Event.category == category,
         Event.timestamp >= start_date,
         Event.location_name.isnot(None)
     ).group_by(Event.location_name).order_by(
-        func.count(Event.event_id).desc()
+        func.count(Event.id).desc()
     ).limit(10).all()
 
     top_locations = [
@@ -291,9 +272,8 @@ def get_category_analysis(
         for loc, count in location_results
     ]
 
-    # Average relevance
+    # Average relevance (GLOBAL)
     avg_relevance = db.query(func.avg(Event.relevance_score)).filter(
-        Event.organization_id == org_id,
         Event.category == category,
         Event.timestamp >= start_date,
         Event.relevance_score.isnot(None)

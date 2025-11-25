@@ -9,10 +9,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
 from backend.core.database import get_db
+from backend.core.dependencies import get_current_user
 from backend.core.logging import get_logger
 from backend.models.event import Event
 from backend.models.user import User
-from backend.routers.auth import get_current_user
 from backend.services.clustering import clustering_service
 from backend.services.fusion import fusion_service
 
