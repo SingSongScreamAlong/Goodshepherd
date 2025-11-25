@@ -145,6 +145,27 @@ The platform provides missionaries with continuous awareness of:
    python -m workers.rss_worker
    ```
 
+## 🚀 Production Deployment
+
+For production deployments, see the comprehensive [DEPLOYMENT.md](DEPLOYMENT.md) guide which covers:
+
+- Docker and Kubernetes deployment
+- Environment configuration
+- Security best practices
+- Monitoring and health checks
+- Backup and recovery procedures
+- Performance tuning
+- Troubleshooting
+
+**Quick Production Start:**
+```bash
+# Using Docker Compose
+docker-compose -f docker-compose.prod.yml up -d
+
+# Access monitoring endpoints
+curl https://yourdomain.com/monitoring/health/detailed
+```
+
 ## 📚 API Endpoints
 
 ### Authentication
@@ -156,12 +177,35 @@ The platform provides missionaries with continuous awareness of:
 - `GET /events` - List events (with filters)
 - `GET /events/{event_id}` - Get single event
 
+### Dashboard
+- `GET /dashboard/summary` - Dashboard summary with key metrics
+- `GET /dashboard/trends` - Time-series trend analysis
+- `GET /dashboard/category-analysis/{category}` - Category-specific analysis
+
+### Dossiers & Watchlists
+- `GET /dossiers` - List all dossiers
+- `POST /dossiers` - Create new dossier
+- `GET /dossiers/{id}` - Get dossier by ID
+- `PATCH /dossiers/{id}` - Update dossier
+- `DELETE /dossiers/{id}` - Delete dossier
+- `GET /dossiers/{id}/stats` - Get dossier statistics
+- `POST /dossiers/{id}/refresh` - Refresh dossier stats
+- `GET /watchlists` - List all watchlists
+- `POST /watchlists` - Create new watchlist
+
 ### Ingest & Fusion
 - `POST /ingest/fusion/run` - Run clustering & fusion on recent events
 - `GET /ingest/health` - Ingest subsystem health
 
-### Health
-- `GET /health` - Health check
+### Monitoring (Production)
+- `GET /monitoring/health/live` - Liveness probe (Kubernetes)
+- `GET /monitoring/health/ready` - Readiness probe (Kubernetes)
+- `GET /monitoring/health/detailed` - Detailed health with components
+- `GET /monitoring/metrics` - Application metrics
+- `GET /monitoring/version` - Version information
+
+### Health (Legacy)
+- `GET /health` - Basic health check
 - `GET /` - API info
 
 ## 🗃️ Database Schema
@@ -346,7 +390,7 @@ Goodshepherd/
 - Refresh stats manually or automatically
 - OSINT compliant throughout (no private individual tracking)
 
-### ✅ Phase 7: Dashboard (Current)
+### ✅ Phase 7: Dashboard
 - Backend: Dashboard API endpoints (/dashboard/summary, /dashboard/trends)
 - Real-time summary metrics (today, week, month event counts)
 - High-relevance event tracking and highlighting
@@ -367,11 +411,45 @@ Goodshepherd/
 - Responsive dashboard layout with 4-column grid
 - Real-time data refresh capability
 
-### 📋 Phase 8: Production Ready
-- Comprehensive logging
-- Metrics/monitoring
-- Full test coverage
-- Documentation
+### ✅ Phase 8: Production Ready (Current)
+- **Request Tracking & Logging:**
+  - Structured logging with request IDs for tracing
+  - JSON log format for machine parsing
+  - Contextual logging with request metadata
+  - Request/response timing and status tracking
+- **Security Middleware:**
+  - Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+  - Request tracking with unique IDs
+  - CORS properly configured
+- **Enhanced Monitoring:**
+  - Detailed health checks (/monitoring/health/detailed)
+  - Kubernetes-ready liveness probe (/monitoring/health/live)
+  - Kubernetes-ready readiness probe (/monitoring/health/ready)
+  - Application metrics endpoint (/monitoring/metrics)
+  - Component-level health diagnostics
+  - Database connection pool monitoring
+  - Version information endpoint
+- **Comprehensive Test Suite:**
+  - Monitoring endpoint tests
+  - Dashboard API tests
+  - Dossier and watchlist tests
+  - Integration tests for all endpoints
+  - Authentication and authorization tests
+- **Production Documentation:**
+  - Complete deployment guide (DEPLOYMENT.md)
+  - Docker and Kubernetes deployment examples
+  - Environment configuration guide
+  - Security best practices
+  - Backup and recovery procedures
+  - Troubleshooting guide
+  - Performance tuning recommendations
+- **Production Features:**
+  - Health checks for orchestration
+  - Structured JSON logging
+  - Request correlation IDs
+  - Database connection pooling
+  - Error tracking and reporting
+  - Graceful shutdown handling
 
 ## 📝 Contributing
 
@@ -449,5 +527,5 @@ curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
 
 ---
 
-**Version:** 0.7.0 (Phase 7)
-**Status:** Active Development
+**Version:** 0.8.0 (Phase 8 - Production Ready)
+**Status:** Production Ready

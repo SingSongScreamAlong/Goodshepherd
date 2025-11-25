@@ -106,7 +106,7 @@ export default function Layout({ children }: LayoutProps) {
             The Good Shepherd - OSINT Intelligence Platform for Missionaries in Europe
           </p>
           <p className="text-center text-xs text-gray-400 mt-1">
-            Version 0.7.0 | Read-only intelligence gathering
+            Version 0.8.0 | Production Ready | Read-only intelligence gathering
           </p>
         </div>
       </footer>
