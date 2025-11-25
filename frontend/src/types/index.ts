@@ -170,3 +170,35 @@ export interface WatchlistCreate {
   notification_enabled?: boolean;
   dossier_ids?: string[];
 }
+
+// Dashboard Types
+
+export interface DashboardSummary {
+  timestamp: string;
+  total_events: number;
+  events_today: number;
+  events_week: number;
+  events_month: number;
+  high_relevance_today: number;
+  category_distribution: Record<string, number>;
+  sentiment_distribution: Record<string, number>;
+  top_locations: Array<{ location: string; count: number }>;
+  total_dossiers: number;
+  active_dossiers: number;
+  recent_highlights: Array<{
+    event_id: string;
+    summary: string;
+    category: string | null;
+    relevance_score: number;
+    timestamp: string;
+  }>;
+}
+
+export interface TrendsData {
+  period_days: number;
+  start_date: string;
+  end_date: string;
+  daily_counts: Array<{ date: string; count: number }>;
+  category_trends: Record<string, Array<{ date: string; count: number }>>;
+  sentiment_trends: Record<string, Array<{ date: string; count: number }>>;
+}

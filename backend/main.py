@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from backend.core.config import settings
 from backend.core.logging import setup_logging, get_logger
 from backend.core.database import check_db_connection, check_postgis_available
-from backend.routers import auth, events, ingest, dossiers
+from backend.routers import auth, events, ingest, dossiers, dashboard
 
 # Setup logging
 setup_logging()
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="The Good Shepherd",
     description="Autonomous OSINT Intelligence Platform for Missionaries in Europe",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 
@@ -89,7 +89,7 @@ def root():
     """
     return {
         "message": "The Good Shepherd - OSINT Intelligence Platform",
-        "version": "0.6.0",
+        "version": "0.7.0",
         "documentation": "/docs"
     }
 
@@ -100,6 +100,7 @@ app.include_router(events.router)
 app.include_router(ingest.router)
 app.include_router(dossiers.router)
 app.include_router(dossiers.watchlist_router)
+app.include_router(dashboard.router)
 
 
 # Global exception handler

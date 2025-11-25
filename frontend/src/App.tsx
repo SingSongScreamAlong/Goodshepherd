@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import StreamView from './pages/StreamView';
 import EventMap from './pages/EventMap';
 import Dossiers from './pages/Dossiers';
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
   return (
@@ -47,6 +48,16 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <Dossiers />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
                 </Layout>
               </ProtectedRoute>
             }

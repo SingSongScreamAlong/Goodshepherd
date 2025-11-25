@@ -62,7 +62,16 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   Dossiers
                 </Link>
-                {/* Future: Add Dashboard link */}
+                <Link
+                  to="/dashboard"
+                  className={`px-3 py-2 text-sm font-medium ${
+                    location.pathname === '/dashboard'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  Dashboard
+                </Link>
               </div>
             </div>
 
@@ -97,7 +106,7 @@ export default function Layout({ children }: LayoutProps) {
             The Good Shepherd - OSINT Intelligence Platform for Missionaries in Europe
           </p>
           <p className="text-center text-xs text-gray-400 mt-1">
-            Version 0.6.0 | Read-only intelligence gathering
+            Version 0.7.0 | Read-only intelligence gathering
           </p>
         </div>
       </footer>

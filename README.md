@@ -330,7 +330,7 @@ Goodshepherd/
 - Navigation between Stream and Map views
 - Handles events without geolocation gracefully
 
-### ✅ Phase 6: Dossiers & Watchlists (Current)
+### ✅ Phase 6: Dossiers & Watchlists
 - Backend: Dossier and Watchlist models with full CRUD API
 - Database migration: dossiers, watchlists, watchlist_dossier tables
 - 5 dossier types: location, organization, group, topic, person (public officials only)
@@ -346,10 +346,26 @@ Goodshepherd/
 - Refresh stats manually or automatically
 - OSINT compliant throughout (no private individual tracking)
 
-### 📋 Phase 7: Dashboard
-- "Today's Picture" view
-- Summary charts
-- Key highlights
+### ✅ Phase 7: Dashboard (Current)
+- Backend: Dashboard API endpoints (/dashboard/summary, /dashboard/trends)
+- Real-time summary metrics (today, week, month event counts)
+- High-relevance event tracking and highlighting
+- Category distribution visualization (7-day period)
+- Sentiment distribution analysis with percentages
+- Top active locations with event counts
+- Active vs total dossiers tracking
+- Recent high-priority events feed (today's highlights)
+- Trend analysis API with daily event counts
+- Category trends over time (up to 90 days)
+- Sentiment trends tracking
+- Frontend: Dashboard page with "Today's Picture" view
+- StatCard component for key metrics with trend indicators
+- Visual progress bars for category distribution
+- Sentiment breakdown with color-coded bars
+- Top locations grid display
+- Today's high-priority events list
+- Responsive dashboard layout with 4-column grid
+- Real-time data refresh capability
 
 ### 📋 Phase 8: Production Ready
 - Comprehensive logging
@@ -433,5 +449,5 @@ curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
 
 ---
 
-**Version:** 0.6.0 (Phase 6)
+**Version:** 0.7.0 (Phase 7)
 **Status:** Active Development
