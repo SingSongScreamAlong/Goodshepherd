@@ -197,6 +197,21 @@ curl https://yourdomain.com/monitoring/health/detailed
 - `POST /ingest/fusion/run` - Run clustering & fusion on recent events
 - `GET /ingest/health` - Ingest subsystem health
 
+### Event Feedback
+- `POST /feedback/events/{event_id}` - Submit feedback on event quality
+- `GET /feedback/events/{event_id}` - Get all feedback for an event
+- `GET /feedback` - List feedback with filters (by event, user, rating)
+- `DELETE /feedback/{feedback_id}` - Delete feedback entry
+
+### Organization Settings
+- `GET /settings` - Get organization settings (auto-creates if none exist)
+- `PUT /settings` - Update organization settings (partial update)
+- `POST /settings/reset` - Reset settings to defaults
+
+### Audit Logs
+- `GET /audit/logs` - Get audit logs with filtering and pagination
+- `GET /audit/stats` - Get aggregate audit statistics
+
 ### Monitoring (Production)
 - `GET /monitoring/health/live` - Liveness probe (Kubernetes)
 - `GET /monitoring/health/ready` - Readiness probe (Kubernetes)
@@ -210,12 +225,27 @@ curl https://yourdomain.com/monitoring/health/detailed
 
 ## 🗃️ Database Schema
 
-### Tables
+### Core Tables
 - **users** - User accounts
 - **organizations** - Multi-tenant organizations
 - **user_organization** - User-org membership with roles
-- **events** - Intelligence events with geolocation
+- **events** - Intelligence events with geolocation (GLOBAL)
 - **sources** - Data source tracking
+
+### Intelligence Tables
+- **dossiers** - Tracked entities (location, org, group, topic, person) (ORG-SCOPED)
+- **watchlists** - Collections of dossiers with priorities (ORG-SCOPED)
+- **watchlist_dossier** - Many-to-many dossier-watchlist relationships
+
+### Governance Tables
+- **event_feedback** - User feedback on event quality and relevance (ORG-SCOPED)
+- **audit_logs** - Comprehensive audit trail of all user actions (ORG-SCOPED)
+- **organization_settings** - Per-tenant configuration and preferences (ORG-SCOPED)
+
+### Multi-Tenant Architecture
+- **GLOBAL objects:** Events and sources are shared across all organizations
+- **ORG-SCOPED objects:** Dossiers, watchlists, feedback, audit logs, and settings are isolated per organization
+- **See:** [docs/DATA_MODEL.md](docs/DATA_MODEL.md) for detailed multi-tenancy explanation
 
 ### Event Categories
 - `protest` - Protests and demonstrations
@@ -434,10 +464,47 @@ Goodshepherd/
   - Component-level health diagnostics
   - Database connection pool monitoring
   - Version information endpoint
+- **Audit Trails & Governance:**
+  - Comprehensive audit logging for all user actions
+  - Track create/update/delete/view/export operations
+  - IP address and user agent tracking for forensics
+  - Audit log API with filtering and pagination (GET /audit/logs)
+  - Aggregate statistics endpoint (GET /audit/stats)
+  - Tamper-resistant audit trail with timestamps
+  - Organization-scoped audit access control
+- **Event Feedback System:**
+  - User feedback collection on event quality and relevance
+  - Accuracy ratings (1-5 stars) for LLM enrichment quality
+  - Relevance ratings for content filtering improvement
+  - False positive reporting mechanism
+  - Category correction suggestions
+  - Free-text feedback for detailed reports
+  - Backend model and API endpoints for feedback CRUD
+  - Used for continuous enrichment improvement
+- **Tenant-Level Configuration:**
+  - Organization settings model for per-tenant customization
+  - Default filters (categories, sentiment, relevance threshold)
+  - Alert thresholds and notification preferences
+  - Feature toggles (email alerts, clustering, feedback, audit logging)
+  - Display preferences (map zoom/center, events per page)
+  - Data retention policies (event and audit log retention)
+  - Regional focus (include/exclude specific regions)
+  - Flexible JSON custom configuration field
+  - Settings API with GET/PUT/reset endpoints
+  - Auto-creation of default settings per organization
+- **Risk Mitigation & Ethics:**
+  - Comprehensive risk and misuse mitigation documentation
+  - Detailed misuse scenario analysis with prevention strategies
+  - Technical and organizational safeguards
+  - Monitoring and auditing procedures
+  - Incident response playbooks
+  - Legal and compliance considerations
+  - Ethical guidelines for OSINT-only, non-kinetic mission
 - **Comprehensive Test Suite:**
   - Monitoring endpoint tests
   - Dashboard API tests
   - Dossier and watchlist tests
+  - Event feedback functionality tests
   - Integration tests for all endpoints
   - Authentication and authorization tests
 - **Production Documentation:**
@@ -448,6 +515,7 @@ Goodshepherd/
   - Backup and recovery procedures
   - Troubleshooting guide
   - Performance tuning recommendations
+  - Risk mitigation and ethical safeguards guide (RISK_MITIGATION.md)
 - **Production Features:**
   - Health checks for orchestration
   - Structured JSON logging
@@ -461,6 +529,7 @@ Goodshepherd/
 - **[Data Model & Multi-Tenancy](docs/DATA_MODEL.md)** - Understanding org-scoped vs global data
 - **[Ingestion Sources](docs/INGESTION.md)** - Current sources and roadmap
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
+- **[Risk Mitigation & Ethics](docs/RISK_MITIGATION.md)** - Ethical safeguards and misuse prevention
 
 ## 📝 Contributing
 
@@ -542,6 +611,117 @@ The platform automatically detects and merges related events:
 # Trigger fusion for events from last 24 hours
 curl -X POST http://localhost:8000/ingest/fusion/run?hours_back=24 \
   -H "Authorization: Bearer <token>"
+```
+
+## 📋 Audit Trails & Governance
+
+The platform includes comprehensive audit logging for accountability and compliance:
+
+**What Gets Logged:**
+- All create, update, delete, view, and export operations
+- User ID and organization context
+- IP address and user agent for forensics
+- Action metadata (what changed, what was accessed)
+- Timestamp for chronological tracking
+
+**Audit Log API:**
+```bash
+# Get audit logs with filtering
+GET /audit/logs?action_type=delete&days=30&page=1&page_size=50
+
+# Get aggregate statistics
+GET /audit/stats?days=7
+```
+
+**Use Cases:**
+- Investigate suspicious activity patterns
+- Compliance reporting and regulatory audits
+- Incident response and forensics
+- User activity monitoring by administrators
+- Accountability for data modifications
+
+## 🔄 Event Feedback System
+
+Users can provide feedback on event quality to continuously improve LLM enrichment:
+
+**Feedback Types:**
+- **Accuracy Rating:** 1-5 stars for overall event accuracy
+- **Relevance Rating:** 1-5 stars for event relevance to mission
+- **False Positive:** Flag events that shouldn't have been ingested
+- **Category Correction:** Suggest correct category if miscategorized
+- **Free-text Feedback:** Detailed explanations and suggestions
+
+**API Usage:**
+```bash
+# Submit feedback on an event
+POST /feedback/events/{event_id}
+{
+  "accuracy_rating": 4,
+  "relevance_rating": 5,
+  "is_false_positive": false,
+  "suggested_category": null,
+  "feedback_text": "Good event, very relevant to our region"
+}
+
+# Get all feedback for an event
+GET /feedback/events/{event_id}
+```
+
+**Benefits:**
+- Continuously improve LLM enrichment accuracy
+- Identify patterns in false positives
+- Refine relevance scoring algorithms
+- Collect user insights for better categorization
+
+## ⚙️ Organization Settings
+
+Each organization can customize platform behavior without code deployment:
+
+**Configurable Settings:**
+
+**Default Filters:**
+- Default categories to display
+- Default sentiment filter (positive/neutral/negative)
+- Minimum relevance threshold (0.0-1.0)
+
+**Alert Thresholds:**
+- High-priority threshold for alerts
+- Categories that trigger alerts
+- Sentiment types that trigger alerts
+
+**Feature Toggles:**
+- Enable/disable email alerts
+- Enable/disable event clustering
+- Enable/disable feedback collection
+- Enable/disable audit logging
+
+**Display Preferences:**
+- Default map zoom level and center coordinates
+- Events per page in list views
+
+**Data Retention:**
+- Event retention days (auto-delete old events)
+- Audit log retention days
+
+**Regional Focus:**
+- Focus regions (prioritize certain countries/areas)
+- Exclude regions (completely filter out certain areas)
+
+**API Usage:**
+```bash
+# Get organization settings
+GET /settings
+
+# Update settings (partial update)
+PUT /settings
+{
+  "default_min_relevance": 0.7,
+  "high_priority_threshold": 0.85,
+  "exclude_regions": ["Asia", "Americas"]
+}
+
+# Reset to defaults
+POST /settings/reset
 ```
 
 ---
