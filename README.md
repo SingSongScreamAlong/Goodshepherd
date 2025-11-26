@@ -530,6 +530,9 @@ Goodshepherd/
 - **[Ingestion Sources](docs/INGESTION.md)** - Current sources and roadmap
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
 - **[Risk Mitigation & Ethics](docs/RISK_MITIGATION.md)** - Ethical safeguards and misuse prevention
+- **[Audit Logging](docs/AUDIT_LOGGING.md)** - Comprehensive audit trail system
+- **[Feedback System](docs/FEEDBACK_SYSTEM.md)** - Human feedback loop for quality improvement
+- **[Organization Settings](docs/ORG_SETTINGS.md)** - Tenant-level configuration guide
 
 ## 📝 Contributing
 
