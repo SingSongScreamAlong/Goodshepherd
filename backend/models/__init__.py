@@ -4,6 +4,7 @@ from .event import Event, EventCategory, SentimentEnum, StabilityTrend
 from .source import Source
 from .feedback import EventFeedback
 from .audit import AuditLog
+from .org_settings import OrganizationSettings
 
 __all__ = [
     "User",
@@ -17,4 +18,5 @@ __all__ = [
     "Source",
     "EventFeedback",
     "AuditLog",
+    "OrganizationSettings",
 ]
