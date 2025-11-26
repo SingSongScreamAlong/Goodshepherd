@@ -68,8 +68,8 @@ export default function AuditLog() {
       if (actionType) params.append('action_type', actionType);
       if (objectType) params.append('object_type', objectType);
 
-      const response = await apiClient.get(`/audit/logs?${params.toString()}`);
-      setLogs(response.data);
+      const data = await apiClient.get<AuditLogEntry[]>(`/audit/logs?${params.toString()}`);
+      setLogs(data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load audit logs');
       console.error('Error fetching audit logs:', err);
@@ -80,8 +80,8 @@ export default function AuditLog() {
 
   const fetchAuditStats = async () => {
     try {
-      const response = await apiClient.get(`/audit/stats?days=${days}`);
-      setStats(response.data);
+      const data = await apiClient.get<AuditStats>(`/audit/stats?days=${days}`);
+      setStats(data);
     } catch (err) {
       console.error('Error fetching audit stats:', err);
     }

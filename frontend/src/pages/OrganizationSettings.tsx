@@ -40,7 +40,6 @@ interface OrgSettings {
 }
 
 export default function OrganizationSettings() {
-  const [settings, setSettings] = useState<OrgSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,9 +82,8 @@ export default function OrganizationSettings() {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.get('/settings');
-      setSettings(response.data);
-      setFormData(response.data);
+      const data = await apiClient.get<OrgSettings>('/settings');
+      setFormData(data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load settings');
       console.error('Error fetching settings:', err);
