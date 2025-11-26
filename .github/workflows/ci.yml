@@ -52,6 +52,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pytest-cov  # For code coverage reporting
 
     - name: Create test environment file
       working-directory: ./backend
@@ -74,20 +75,43 @@ jobs:
       run: |
         alembic upgrade head
 
+    - name: Validate migrations can rollback
+      working-directory: ./backend
+      run: |
+        # Test downgrade and re-upgrade to ensure migrations are reversible
+        alembic downgrade -1
+        alembic upgrade head
+        echo "Migration validation successful"
+
     - name: Run tests with pytest
       working-directory: ./backend
       run: |
-        pytest tests/ -v --tb=short --maxfail=3
+        pytest tests/ -v --tb=short --maxfail=3 \
+          --cov=. \
+          --cov-report=term-missing \
+          --cov-report=html \
+          --cov-report=xml
       env:
         PYTHONPATH: /home/runner/work/Goodshepherd/Goodshepherd/backend
 
-    - name: Upload coverage report (if generated)
+    - name: Upload coverage report
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: backend-test-results
-        path: backend/htmlcov/
+        name: backend-coverage-report
+        path: |
+          backend/htmlcov/
+          backend/coverage.xml
         if-no-files-found: ignore
+
+    - name: Display coverage summary
+      if: always()
+      working-directory: ./backend
+      run: |
+        if [ -f coverage.xml ]; then
+          echo "Coverage report generated successfully"
+          coverage report --skip-empty || true
+        fi
 
   backend-lint:
     name: Backend Code Quality
@@ -104,17 +128,22 @@ jobs:
 
     - name: Install linting tools
       run: |
-        pip install ruff black isort
+        pip install ruff black isort pip-audit
 
     - name: Run ruff (linter)
       working-directory: ./backend
       run: |
-        ruff check . || true  # Non-blocking for now
+        ruff check . --exit-zero  # Report issues but don't fail build
 
     - name: Check code formatting with black
       working-directory: ./backend
       run: |
-        black --check . || true  # Non-blocking for now
+        black --check . --diff || echo "Code formatting issues found - run 'black .' to fix"
+
+    - name: Run dependency vulnerability scan
+      working-directory: ./backend
+      run: |
+        pip-audit --desc --skip-editable || echo "Vulnerabilities found - review and update dependencies"
 
   frontend-build:
     name: Frontend Build & Test
@@ -134,6 +163,11 @@ jobs:
     - name: Install dependencies
       working-directory: ./frontend
       run: npm ci
+
+    - name: Run dependency vulnerability scan
+      working-directory: ./frontend
+      run: |
+        npm audit --audit-level=moderate || echo "Vulnerabilities found - review and update dependencies"
 
     - name: Run TypeScript type check
       working-directory: ./frontend
@@ -170,6 +204,29 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Check for hardcoded secrets
+      run: |
+        echo "Scanning for potential hardcoded secrets..."
+        # Check for common secret patterns (excluding test files)
+        ! grep -r -E "(password|secret|api_key|token)\s*=\s*['\"][^'\"]{8,}" \
+          --exclude-dir={.git,node_modules,venv,htmlcov,dist,build} \
+          --exclude="*.md" \
+          --exclude="*.yml" \
+          --exclude=".env.example" \
+          . || echo "Warning: Potential hardcoded secrets found (review manually)"
+
+    - name: Verify no PII in data models
+      run: |
+        echo "Checking for prohibited PII fields in models..."
+        # Ensure no SSN, credit card, or biometric fields in models
+        if grep -r -E "(ssn|social_security|credit_card|biometric|facial_recognition)" \
+          backend/models/ frontend/src/ --exclude-dir={node_modules,dist}; then
+          echo "ERROR: Prohibited PII fields found in data models!"
+          exit 1
+        else
+          echo "No prohibited PII fields found"
+        fi
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
