@@ -3,6 +3,7 @@ from .user import User, Organization, RoleEnum, user_organization
 from .event import Event, EventCategory, SentimentEnum, StabilityTrend
 from .source import Source
 from .feedback import EventFeedback
+from .audit import AuditLog
 
 __all__ = [
     "User",
@@ -15,4 +16,5 @@ __all__ = [
     "StabilityTrend",
     "Source",
     "EventFeedback",
+    "AuditLog",
 ]
