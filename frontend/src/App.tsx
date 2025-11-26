@@ -11,6 +11,8 @@ import StreamView from './pages/StreamView';
 import EventMap from './pages/EventMap';
 import Dossiers from './pages/Dossiers';
 import Dashboard from './pages/Dashboard';
+import AuditLog from './pages/AuditLog';
+import OrganizationSettings from './pages/OrganizationSettings';
 
 export default function App() {
   return (
@@ -59,6 +61,22 @@ export default function App() {
                 <Layout>
                   <Dashboard />
                 </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <ProtectedRoute>
+                <AuditLog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <OrganizationSettings />
               </ProtectedRoute>
             }
           />
