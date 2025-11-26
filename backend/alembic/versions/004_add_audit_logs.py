@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column('action_type', sa.String(50), nullable=False),
         sa.Column('object_type', sa.String(50), nullable=False),
         sa.Column('object_id', postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column('metadata', postgresql.JSON(), nullable=True),
+        sa.Column('action_metadata', postgresql.JSON(), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('ip_address', sa.String(45), nullable=True),
         sa.Column('user_agent', sa.String(500), nullable=True),

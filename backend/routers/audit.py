@@ -32,7 +32,7 @@ class AuditLogResponse(BaseModel):
     object_type: str
     object_id: Optional[str]
     description: Optional[str]
-    metadata: Optional[dict]
+    metadata: Optional[dict]  # Exposed as 'metadata' in API for backward compatibility
     ip_address: Optional[str]
     timestamp: datetime
 
@@ -114,7 +114,7 @@ def get_audit_logs(
             object_type=log.object_type,
             object_id=str(log.object_id) if log.object_id else None,
             description=log.description,
-            metadata=log.metadata,
+            metadata=log.action_metadata,  # Map action_metadata to metadata in API response
             ip_address=log.ip_address,
             timestamp=log.timestamp,
         ))

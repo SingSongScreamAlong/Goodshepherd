@@ -38,7 +38,7 @@ def log_audit_action(
         object_type: Type of object being acted upon (dossier, watchlist, event, etc.)
         object_id: ID of the specific object (optional)
         description: Human-readable description (optional)
-        metadata: Additional context data (optional)
+        metadata: Additional context data (optional, stored as action_metadata)
         request: FastAPI request object for extracting IP/user agent (optional)
 
     Returns:
@@ -60,7 +60,7 @@ def log_audit_action(
             object_type=object_type,
             object_id=object_id,
             description=description,
-            metadata=metadata,
+            action_metadata=metadata,  # Renamed to avoid SQLAlchemy conflict
             ip_address=ip_address,
             user_agent=user_agent,
         )

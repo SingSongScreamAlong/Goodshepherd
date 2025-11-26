@@ -34,7 +34,7 @@ class AuditLog(Base):
     object_id = Column(UUID(as_uuid=True), nullable=True, index=True)  # ID of the affected object
 
     # Additional context
-    metadata = Column(JSON, nullable=True)  # Flexible JSON field for action-specific data
+    action_metadata = Column(JSON, nullable=True)  # Flexible JSON field for action-specific data (renamed to avoid SQLAlchemy conflict)
     description = Column(Text, nullable=True)  # Human-readable description
     ip_address = Column(String(45), nullable=True)  # IPv4 or IPv6
     user_agent = Column(String(500), nullable=True)  # Browser/client info
