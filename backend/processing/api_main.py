@@ -2427,3 +2427,149 @@ async def get_ml_feedback_stats() -> dict:
         "accuracy_by_category": stats.accuracy_by_category,
         "accuracy_by_threat": stats.accuracy_by_threat,
     }
+
+
+# =============================================================================
+# Mobile/Field API (Phase 4: Field Deployment)
+# =============================================================================
+
+class CheckInRequest(BaseModel):
+    """Check-in request from mobile app."""
+    status: str  # safe, caution, help
+    note: Optional[str] = None
+    location: Optional[dict] = None
+    timestamp: Optional[str] = None
+
+
+class CheckInResponse(BaseModel):
+    """Check-in response."""
+    success: bool
+    check_in_id: str
+    message: str
+
+
+@app.post("/api/checkin", tags=["mobile"], response_model=CheckInResponse)
+async def submit_checkin(
+    request: CheckInRequest,
+    current_user: TokenData = Depends(get_current_user),
+) -> CheckInResponse:
+    """Submit a safety check-in from mobile app."""
+    import uuid
+    from datetime import datetime
+    
+    check_in_id = str(uuid.uuid4())
+    
+    # In production, this would save to database and notify coordinators
+    # For now, just log and return success
+    logger.info(
+        f"Check-in received: user={current_user.username}, "
+        f"status={request.status}, location={request.location}"
+    )
+    
+    # If status is 'help', trigger emergency notification
+    if request.status == "help":
+        logger.warning(f"EMERGENCY CHECK-IN from {current_user.username}")
+        # Would trigger SMS/push to coordinators
+    
+    return CheckInResponse(
+        success=True,
+        check_in_id=check_in_id,
+        message=f"Check-in recorded as {request.status}",
+    )
+
+
+@app.get("/api/events/recent", tags=["mobile"])
+async def get_recent_events(
+    limit: int = Query(50, le=100),
+    region: Optional[str] = None,
+    threat_level: Optional[str] = None,
+) -> dict:
+    """Get recent events for mobile dashboard (optimized for low bandwidth)."""
+    from backend.analytics.service import get_analytics_service
+    from datetime import datetime, timedelta
+    
+    service = get_analytics_service()
+    
+    # Get events from last 7 days
+    end_date = datetime.utcnow().strftime("%Y-%m-%d")
+    start_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
+    
+    result = await service.get_timeline_events(
+        start_date=start_date,
+        end_date=end_date,
+        category=None,
+        region=region,
+        limit=limit,
+    )
+    
+    # Filter by threat level if specified
+    events = result.get("events", [])
+    if threat_level:
+        events = [e for e in events if e.get("threat_level") == threat_level]
+    
+    # Return minimal data for bandwidth optimization
+    return {
+        "events": [
+            {
+                "id": e["id"],
+                "title": e["title"],
+                "summary": e.get("summary", "")[:200],  # Truncate for bandwidth
+                "threat_level": e.get("threat_level"),
+                "category": e.get("category"),
+                "region": e.get("region"),
+                "fetched_at": e.get("fetched_at"),
+            }
+            for e in events
+        ],
+        "total": len(events),
+        "cached_at": datetime.utcnow().isoformat(),
+    }
+
+
+class SMSAlertRequest(BaseModel):
+    """SMS alert request."""
+    phone_numbers: list[str]
+    message: str
+    threat_level: str = "medium"
+
+
+@app.post("/api/notifications/sms", tags=["mobile"])
+async def send_sms_alert(
+    request: SMSAlertRequest,
+    current_user: TokenData = Depends(get_current_user),
+) -> dict:
+    """Send SMS alert (admin only)."""
+    # Check admin role
+    if "admin" not in current_user.roles:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        from backend.notifications.sms_service import get_sms_service
+        
+        sms_service = get_sms_service()
+        results = await sms_service.send_emergency_broadcast(
+            phone_numbers=request.phone_numbers,
+            message_body=request.message,
+        )
+        
+        return results
+    except ImportError:
+        return {
+            "success": False,
+            "error": "SMS service not configured",
+        }
+
+
+@app.get("/api/notifications/sms/status", tags=["mobile"])
+async def get_sms_status() -> dict:
+    """Get SMS service status."""
+    try:
+        from backend.notifications.sms_service import get_sms_service
+        
+        sms_service = get_sms_service()
+        return sms_service.get_status()
+    except ImportError:
+        return {
+            "configured": False,
+            "error": "SMS service not available",
+        }
