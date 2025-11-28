@@ -141,19 +141,19 @@ export function logout() {
 }
 
 /**
- * Refresh access token
+ * Refresh access token using refresh token rotation
  */
 export async function refreshAccessToken() {
-  const token = getAccessToken();
-  if (!token) return false;
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
   
   try {
     const response = await fetch(`${API_BASE}/api/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
       },
+      body: JSON.stringify({ refresh_token: refreshToken }),
     });
     
     if (!response.ok) {
@@ -162,6 +162,7 @@ export async function refreshAccessToken() {
     }
     
     const data = await response.json();
+    // Store both new access token and rotated refresh token
     setTokens(data.access_token, data.refresh_token);
     return true;
   } catch {
@@ -280,4 +281,63 @@ export async function changePassword(currentPassword, newPassword) {
  */
 export function isAuthenticated() {
   return !!getAccessToken();
+}
+
+/**
+ * Get all active sessions
+ */
+export async function getSessions() {
+  const response = await authFetch(`${API_BASE}/api/auth/sessions`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to get sessions');
+  }
+  
+  return response.json();
+}
+
+/**
+ * Revoke a specific session
+ */
+export async function revokeSession(sessionId) {
+  const response = await authFetch(`${API_BASE}/api/auth/sessions/${sessionId}`, {
+    method: 'DELETE',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to revoke session');
+  }
+  
+  return response.json();
+}
+
+/**
+ * Revoke all other sessions
+ */
+export async function revokeAllSessions() {
+  const response = await authFetch(`${API_BASE}/api/auth/sessions`, {
+    method: 'DELETE',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to revoke sessions');
+  }
+  
+  return response.json();
+}
+
+/**
+ * Logout from server (revokes current session)
+ */
+export async function logoutFromServer() {
+  try {
+    await authFetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+    });
+  } catch {
+    // Ignore errors, still clear local auth
+  }
+  clearAuth();
 }

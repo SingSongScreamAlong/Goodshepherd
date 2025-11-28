@@ -5,3 +5,4 @@ export { ResetPasswordForm } from './ResetPasswordForm';
 export { VerifyEmail } from './VerifyEmail';
 export { UserMenu } from './UserMenu';
 export { AuthModal } from './AuthModal';
+export { ProtectedRoute, withAuth, usePermissions } from './ProtectedRoute';

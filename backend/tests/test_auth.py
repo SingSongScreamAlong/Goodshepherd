@@ -266,17 +266,19 @@ class TestAuthEndpoints:
             "/api/auth/login",
             json={"email": "test@example.com", "password": "password123"},
         )
-        token = login_response.json()["access_token"]
+        tokens = login_response.json()
+        refresh_token = tokens["refresh_token"]
 
-        # Refresh token
+        # Refresh token using the new endpoint format
         response = await client.post(
             "/api/auth/refresh",
-            headers={"Authorization": f"Bearer {token}"},
+            json={"refresh_token": refresh_token},
         )
 
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
+        assert "refresh_token" in data  # New refresh token due to rotation
         assert data["token_type"] == "bearer"
 
     @pytest.mark.asyncio

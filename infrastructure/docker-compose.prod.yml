@@ -1,0 +1,69 @@
+# Production overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  redis:
+    # Enable persistence in production
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    # Use stronger password from environment
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in production}
+
+  meilisearch:
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required in production}
+
+  backend-api:
+    # Production settings
+    command: ["uvicorn", "backend.processing.api_main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+    environment:
+      LOG_LEVEL: WARNING
+      UVICORN_RELOAD: "false"
+    # Don't expose port directly in production (use Caddy)
+    ports: []
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  backend-worker:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  backend-processor:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  frontend:
+    environment:
+      REACT_APP_API_BASE: ""  # Use relative URLs through Caddy
+      REACT_APP_WS_URL: ""
+    # Don't expose port directly in production (use Caddy)
+    ports: []
+
+  caddy:
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required in production}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required for TLS}
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  redis_data:

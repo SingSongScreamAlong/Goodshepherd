@@ -90,10 +90,23 @@ services:
     command: ["uvicorn", "backend.processing.api_main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       REDIS_URL: redis://redis:6379/0
-      DATABASE_URL: postgresql+psycopg://goodshepherd:goodshepherd@postgres:5432/goodshepherd
+      DATABASE_URL: postgresql+asyncpg://goodshepherd:${POSTGRES_PASSWORD:-goodshepherd}@postgres:5432/goodshepherd
       MEILI_HTTP_ADDR: http://meilisearch:7700
       # Admin API Key
       ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      # JWT Authentication
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Rate Limiting
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      # Account Security
+      MAX_FAILED_LOGIN_ATTEMPTS: ${MAX_FAILED_LOGIN_ATTEMPTS:-5}
+      LOCKOUT_DURATION_MINUTES: ${LOCKOUT_DURATION_MINUTES:-15}
+      MAX_SESSIONS_PER_USER: ${MAX_SESSIONS_PER_USER:-5}
       # Twilio SMS/WhatsApp
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
@@ -102,9 +115,11 @@ services:
       # SMTP Email
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Good Shepherd}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       # Intelligence Sources
       ACLED_API_KEY: ${ACLED_API_KEY:-}
       ACLED_EMAIL: ${ACLED_EMAIL:-}

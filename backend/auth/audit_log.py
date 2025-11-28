@@ -42,11 +42,18 @@ class AuditEventType(str, Enum):
     ADMIN_USER_DELETED = "admin.user.deleted"
     ADMIN_ROLE_CHANGED = "admin.role.changed"
     
+    # Session events
+    SESSION_CREATED = "session.created"
+    SESSION_REVOKED = "session.revoked"
+    ALL_SESSIONS_REVOKED = "session.all_revoked"
+    LOGOUT = "user.logout"
+    
     # Security events
     SUSPICIOUS_ACTIVITY = "security.suspicious"
     RATE_LIMIT_EXCEEDED = "security.rate_limit"
     INVALID_TOKEN = "security.invalid_token"
     UNAUTHORIZED_ACCESS = "security.unauthorized"
+    TOKEN_REUSE_DETECTED = "security.token_reuse"
 
 
 @dataclass

@@ -70,6 +70,7 @@ from backend.auth.password_reset import (
 from backend.auth.email_service import auth_email_service
 from backend.auth.audit_log import audit_logger, AuditEventType
 from backend.auth.account_lockout import lockout_manager
+from backend.auth.session_manager import session_manager, Session
 
 # Rate limiter configuration
 # Disable rate limiting in tests via environment variable
@@ -741,15 +742,22 @@ async def login(
         user_agent=user_agent,
     )
     
-    # Create tokens
+    # Create session with refresh token
+    session, refresh_token = session_manager.create_session(
+        user_id=user.id,
+        ip_address=client_ip,
+        user_agent=user_agent,
+    )
+    
+    # Create access token
     token_data = {
         "sub": user.id,
         "email": user.email,
         "roles": user.roles or [],
+        "session_id": session.session_id,
     }
     
     access_token = create_access_token(token_data)
-    refresh_token = create_refresh_token(token_data)
     
     return Token(
         access_token=access_token,
@@ -758,21 +766,46 @@ async def login(
     )
 
 
+class RefreshTokenRequest(BaseModel):
+    """Request model for token refresh."""
+    refresh_token: str
+
+
 @app.post("/api/auth/refresh", tags=["auth"])
-async def refresh_token(
-    current_user: TokenData = Depends(get_current_user),
+async def refresh_tokens(
+    request: Request,
+    payload: RefreshTokenRequest,
 ) -> Token:
-    """Refresh access token using a valid token."""
+    """Refresh access token using refresh token with rotation."""
+    client_ip = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
+    # Rotate the refresh token
+    result = session_manager.rotate_refresh_token(
+        payload.refresh_token,
+        ip_address=client_ip,
+        user_agent=user_agent,
+    )
+    
+    if not result.success:
+        raise HTTPException(
+            status_code=401,
+            detail=result.error or "Invalid refresh token",
+        )
+    
+    session = result.session
+    
+    # Create new access token
     token_data = {
-        "sub": current_user.user_id,
-        "email": current_user.email,
-        "roles": current_user.roles,
+        "sub": session.user_id,
+        "session_id": session.session_id,
     }
     
     access_token = create_access_token(token_data)
     
     return Token(
         access_token=access_token,
+        refresh_token=result.new_refresh_token,
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
 
@@ -801,6 +834,115 @@ async def get_current_user_info(
         email=current_user.email or "",
         roles=current_user.roles,
     )
+
+
+class SessionResponse(BaseModel):
+    """Response model for a session."""
+    session_id: str
+    created_at: str
+    last_used_at: str
+    expires_at: str
+    ip_address: Optional[str] = None
+    device_name: Optional[str] = None
+    is_current: bool = False
+
+
+class SessionListResponse(BaseModel):
+    """Response model for list of sessions."""
+    sessions: list[SessionResponse]
+    total: int
+
+
+@app.get("/api/auth/sessions", tags=["auth"])
+async def list_sessions(
+    current_user: TokenData = Depends(get_current_user),
+) -> SessionListResponse:
+    """List all active sessions for the current user."""
+    sessions = session_manager.get_user_sessions(current_user.user_id)
+    current_session_id = getattr(current_user, 'session_id', None)
+    
+    return SessionListResponse(
+        sessions=[
+            SessionResponse(
+                session_id=s.session_id,
+                created_at=s.created_at.isoformat(),
+                last_used_at=s.last_used_at.isoformat(),
+                expires_at=s.expires_at.isoformat(),
+                ip_address=s.ip_address,
+                device_name=s.device_name,
+                is_current=s.session_id == current_session_id,
+            )
+            for s in sessions
+        ],
+        total=len(sessions),
+    )
+
+
+@app.delete("/api/auth/sessions/{session_id}", tags=["auth"])
+async def revoke_session(
+    session_id: str,
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Revoke a specific session."""
+    # Get the session to verify ownership
+    session = session_manager.get_session(session_id)
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    if session.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to revoke this session")
+    
+    session_manager.revoke_session(session_id)
+    
+    audit_logger.log_event(
+        AuditEventType.SESSION_REVOKED,
+        user_id=current_user.user_id,
+        details={"session_id": session_id},
+    )
+    
+    return {"message": "Session revoked successfully"}
+
+
+@app.delete("/api/auth/sessions", tags=["auth"])
+async def revoke_all_sessions(
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Revoke all sessions except the current one."""
+    current_session_id = getattr(current_user, 'session_id', None)
+    sessions = session_manager.get_user_sessions(current_user.user_id)
+    
+    revoked_count = 0
+    for session in sessions:
+        if session.session_id != current_session_id:
+            session_manager.revoke_session(session.session_id)
+            revoked_count += 1
+    
+    audit_logger.log_event(
+        AuditEventType.ALL_SESSIONS_REVOKED,
+        user_id=current_user.user_id,
+        details={"revoked_count": revoked_count},
+    )
+    
+    return {"message": f"Revoked {revoked_count} sessions"}
+
+
+@app.post("/api/auth/logout", tags=["auth"])
+async def logout(
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Logout and revoke the current session."""
+    session_id = getattr(current_user, 'session_id', None)
+    
+    if session_id:
+        session_manager.revoke_session(session_id)
+        audit_logger.log_event(
+            AuditEventType.LOGOUT,
+            user_id=current_user.user_id,
+            details={"session_id": session_id},
+        )
+    
+    return {"message": "Logged out successfully"}
 
 
 class PasswordResetRequest(BaseModel):
