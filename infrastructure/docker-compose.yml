@@ -135,6 +135,86 @@ services:
       timeout: 10s
       retries: 3
 
+  # Alert engine worker - processes events and triggers notifications
+  alert-worker:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "backend.workers.alert_worker"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://goodshepherd:${POSTGRES_PASSWORD:-goodshepherd}@postgres:5432/goodshepherd
+      REDIS_URL: redis://redis:6379/0
+      # Alert Engine Config
+      ALERT_POLL_INTERVAL: ${ALERT_POLL_INTERVAL:-60}
+      ALERT_BATCH_SIZE: ${ALERT_BATCH_SIZE:-100}
+      ALERT_DEDUP_HOURS: ${ALERT_DEDUP_HOURS:-24}
+      ALERT_ESCALATION_ENABLED: ${ALERT_ESCALATION_ENABLED:-true}
+      ALERT_ESCALATION_TIMEOUT: ${ALERT_ESCALATION_TIMEOUT:-30}
+      # Notification Channels
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Good Shepherd Alerts}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-}
+    depends_on:
+      - redis
+      - postgres
+
+  # Digest worker - sends scheduled digest emails
+  digest-worker:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "backend.workers.digest_worker"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://goodshepherd:${POSTGRES_PASSWORD:-goodshepherd}@postgres:5432/goodshepherd
+      # Digest Config
+      DIGEST_DAILY_HOUR: ${DIGEST_DAILY_HOUR:-8}
+      DIGEST_WEEKLY_DAY: ${DIGEST_WEEKLY_DAY:-0}
+      # SMTP
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Good Shepherd Alerts}
+    depends_on:
+      - postgres
+
+  # Multi-source ingestion worker
+  ingestion-worker:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "backend.workers.ingestion_worker"]
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      # Source Enable/Disable
+      GDACS_ENABLED: ${GDACS_ENABLED:-true}
+      RELIEFWEB_ENABLED: ${RELIEFWEB_ENABLED:-true}
+      WHO_ENABLED: ${WHO_ENABLED:-true}
+      SOCIAL_ENABLED: ${SOCIAL_ENABLED:-true}
+      ACLED_ENABLED: ${ACLED_ENABLED:-true}
+      # Poll Intervals (seconds)
+      GDACS_POLL_INTERVAL: ${GDACS_POLL_INTERVAL:-300}
+      RELIEFWEB_POLL_INTERVAL: ${RELIEFWEB_POLL_INTERVAL:-900}
+      WHO_POLL_INTERVAL: ${WHO_POLL_INTERVAL:-3600}
+      SOCIAL_POLL_INTERVAL: ${SOCIAL_POLL_INTERVAL:-600}
+      ACLED_POLL_INTERVAL: ${ACLED_POLL_INTERVAL:-3600}
+      # API Keys
+      ACLED_API_KEY: ${ACLED_API_KEY:-}
+      ACLED_EMAIL: ${ACLED_EMAIL:-}
+    depends_on:
+      - redis
+
   frontend:
     build:
       context: ../frontend
