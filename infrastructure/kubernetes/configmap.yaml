@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: goodshepherd-config
+  namespace: goodshepherd
+  labels:
+    app: goodshepherd
+data:
+  # Database
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "goodshepherd"
+  
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # Search
+  MEILISEARCH_HOST: "meilisearch-service"
+  MEILISEARCH_PORT: "7700"
+  
+  # ML Configuration
+  TRANSLATION_PROVIDER: "libretranslate"
+  LIBRETRANSLATE_URL: "http://libretranslate-service:5000"
+  LT_LANGUAGES: "en,ar,fr,es,ru,zh,pt,de"
+  
+  # SMS Configuration
+  SMS_PRIMARY_PROVIDER: "twilio"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # GDPR
+  GDPR_STORAGE_PATH: "/data/gdpr"
+  
+  # Feature Flags
+  ENABLE_ML_ANALYSIS: "true"
+  ENABLE_SMS_FALLBACK: "true"
+  ENABLE_OFFLINE_SYNC: "true"
+  
+  # European Sources
+  EU_DATA_PORTAL_ENABLED: "true"
+  GDACS_ENABLED: "true"
+  ECDC_ENABLED: "true"
+  FRONTEX_ENABLED: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: goodshepherd-secrets
+  namespace: goodshepherd
+  labels:
+    app: goodshepherd
+type: Opaque
+stringData:
+  # Database credentials (replace with actual values)
+  DATABASE_USER: "goodshepherd"
+  DATABASE_PASSWORD: "CHANGE_ME"
+  
+  # Redis
+  REDIS_PASSWORD: "CHANGE_ME"
+  
+  # JWT
+  JWT_SECRET: "CHANGE_ME_GENERATE_SECURE_KEY"
+  
+  # API Keys (replace with actual values)
+  MEILISEARCH_API_KEY: "CHANGE_ME"
+  
+  # SMS Providers
+  TWILIO_ACCOUNT_SID: ""
+  TWILIO_AUTH_TOKEN: ""
+  TWILIO_FROM_NUMBER: ""
+  
+  # Push Notifications
+  FCM_SERVER_KEY: ""
+  VAPID_PUBLIC_KEY: ""
+  VAPID_PRIVATE_KEY: ""
+  
+  # External APIs
+  EU_DATA_PORTAL_API_KEY: ""

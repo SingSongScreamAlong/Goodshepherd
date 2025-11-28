@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: goodshepherd
+  labels:
+    app.kubernetes.io/name: goodshepherd
+    app.kubernetes.io/part-of: goodshepherd-platform
+    environment: production
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: goodshepherd-quota
+  namespace: goodshepherd
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "10"
+    pods: "50"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: goodshepherd-limits
+  namespace: goodshepherd
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: 512Mi
+      defaultRequest:
+        cpu: "100m"
+        memory: 128Mi
+      type: Container
