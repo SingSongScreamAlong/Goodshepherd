@@ -38,65 +38,79 @@ Technical stack:
 - **AI Service**: Python (Flask) with Hugging Face Transformers
 - **Data Flow**: RSS → AI Processing → Cached Storage → Dashboards
 
-## Installation
+## Quick Start
 
 ### Prerequisites
-- Node.js (v18+)
-- Python (v3.11+)
-- npm or yarn
-- Docker & Docker Compose (recommended)
+- Docker & Docker Compose
+- Python 3.11+
+- Node.js 18+
 
-### Setup
+### One-Command Start
+```bash
+./scripts/quickstart.sh
+```
 
-1. Clone the repository:
+This will:
+1. Start infrastructure (Redis, PostgreSQL, Meilisearch)
+2. Install Python and Node dependencies
+3. Initialize the database
+4. Start the backend API (port 8000)
+5. Start the frontend (port 3000)
+
+### Manual Setup
+
+1. **Clone and setup environment:**
    ```bash
-   git clone <repo-url>
-   cd GoodShepherd
+   git clone https://github.com/SingSongScreamAlong/Goodshepherd.git
+   cd Goodshepherd
+   cp infrastructure/.env.example infrastructure/.env
    ```
 
-2. Backend setup:
+2. **Start infrastructure services:**
    ```bash
-   cd backend
-   npm install
+   cd infrastructure
+   docker compose up -d redis postgres meilisearch
+   cd ..
    ```
 
-3. Frontend setup:
+3. **Setup Python backend:**
    ```bash
-   cd ../frontend
-   npm install
-   ```
-
-4. AI Service setup:
-   ```bash
-   cd ../ai_service
    python3 -m venv venv
    source venv/bin/activate
-   pip install flask transformers torch
+   pip install -r requirements.txt
    ```
 
-## Usage
-
-1. Start the AI service:
+4. **Setup frontend:**
    ```bash
-   cd ai_service
+   cd frontend
+   npm install
+   cd ..
+   ```
+
+5. **Start backend API:**
+   ```bash
    source venv/bin/activate
-   python app.py
+   uvicorn backend.processing.api_main:app --reload --port 8000
    ```
-   Access at http://localhost:5000
 
-2. Start the backend:
+6. **Start frontend (new terminal):**
    ```bash
-   cd ../backend
-   node rss-collector.js
-   ```
-   Access at http://localhost:3001
-
-3. Start the frontend:
-   ```bash
-   cd ../frontend
+   cd frontend
    npm start
    ```
-   Access at http://localhost:3000
+
+### Access Points
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8000 |
+| API Documentation | http://localhost:8000/docs |
+| Meilisearch | http://localhost:7700 |
+
+### Stop Services
+```bash
+./scripts/stop.sh
+```
 
 ### Navigation
 - **Missionary Dashboard**: http://localhost:3000/ (mobile alerts, offline support)
