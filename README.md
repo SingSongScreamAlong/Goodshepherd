@@ -41,14 +41,21 @@ Technical stack:
 ## Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
 - Python 3.11+
 - Node.js 18+
+- Docker (optional, for production mode)
 
-### One-Command Start
+### Development Mode (No Docker)
+```bash
+./scripts/dev.sh
+```
+Uses SQLite - perfect for testing and development.
+
+### Production Mode (With Docker)
 ```bash
 ./scripts/quickstart.sh
 ```
+Uses PostgreSQL, Redis, Meilisearch via Docker.
 
 This will:
 1. Start infrastructure (Redis, PostgreSQL, Meilisearch)

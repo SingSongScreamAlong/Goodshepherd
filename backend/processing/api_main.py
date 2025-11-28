@@ -122,8 +122,20 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Start background services on application startup."""
-    logger.info("Starting Good Shepherd API v0.3.0")
-    await ws_manager.start()
+    dev_mode = os.getenv("DEV_MODE", "false").lower() in {"1", "true", "yes"}
+    mode_str = "DEV MODE (SQLite)" if dev_mode else "PRODUCTION"
+    logger.info(f"Starting Good Shepherd API v0.3.0 - {mode_str}")
+    
+    # Initialize database
+    from backend.database.session import init_database
+    await init_database()
+    logger.info("Database initialized")
+    
+    # Start WebSocket manager (gracefully handles missing Redis)
+    try:
+        await ws_manager.start()
+    except Exception as e:
+        logger.warning(f"WebSocket manager startup issue (non-fatal): {e}")
 
 
 @app.on_event("shutdown")

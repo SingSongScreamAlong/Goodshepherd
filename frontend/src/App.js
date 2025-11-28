@@ -522,11 +522,7 @@ function ReportList({ reports, error }) {
 }
 
 function App() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
+  return <AppContent />;
 }
 
 function AlertRulePanel({
