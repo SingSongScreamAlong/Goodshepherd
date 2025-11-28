@@ -1790,3 +1790,325 @@ async def send_test_digest(
         "message_id": result.message_id,
         "error": result.error,
     }
+
+
+# =============================================================================
+# Notification Preferences API
+# =============================================================================
+
+class NotificationPreferencesCreate(BaseModel):
+    """Create notification preferences."""
+    email_enabled: bool = True
+    sms_enabled: bool = False
+    whatsapp_enabled: bool = False
+    push_enabled: bool = True
+    webhook_enabled: bool = False
+    phone_number: Optional[str] = None
+    webhook_url: Optional[str] = None
+    digest_frequency: str = "daily"
+    min_priority: str = "medium"
+    watched_regions: Optional[List[str]] = None
+    watched_categories: Optional[List[str]] = None
+    quiet_hours_enabled: bool = False
+    quiet_hours_start: Optional[str] = None  # HH:MM format
+    quiet_hours_end: Optional[str] = None
+
+
+class NotificationPreferencesResponse(BaseModel):
+    """Response model for notification preferences."""
+    id: str
+    user_id: str
+    email_enabled: bool
+    sms_enabled: bool
+    whatsapp_enabled: bool
+    push_enabled: bool
+    webhook_enabled: bool
+    phone_number: Optional[str]
+    webhook_url: Optional[str]
+    digest_frequency: str
+    min_priority: str
+    watched_regions: Optional[List[str]]
+    watched_categories: Optional[List[str]]
+    quiet_hours_enabled: bool
+    quiet_hours_start: Optional[str]
+    quiet_hours_end: Optional[str]
+
+
+@app.get("/api/notifications/preferences", tags=["notifications"])
+async def get_notification_preferences(
+    current_user: TokenData = Depends(get_current_user),
+    session=Depends(get_session),
+) -> NotificationPreferencesResponse:
+    """Get current user's notification preferences."""
+    from sqlalchemy import select
+    from backend.alerts.notification_preferences import NotificationPreferencesRecord
+    
+    result = await session.execute(
+        select(NotificationPreferencesRecord)
+        .where(NotificationPreferencesRecord.user_id == current_user.user_id)
+    )
+    prefs = result.scalar_one_or_none()
+    
+    if not prefs:
+        # Return defaults
+        return NotificationPreferencesResponse(
+            id="",
+            user_id=current_user.user_id,
+            email_enabled=True,
+            sms_enabled=False,
+            whatsapp_enabled=False,
+            push_enabled=True,
+            webhook_enabled=False,
+            phone_number=None,
+            webhook_url=None,
+            digest_frequency="daily",
+            min_priority="medium",
+            watched_regions=None,
+            watched_categories=None,
+            quiet_hours_enabled=False,
+            quiet_hours_start=None,
+            quiet_hours_end=None,
+        )
+    
+    return NotificationPreferencesResponse(
+        id=prefs.id,
+        user_id=prefs.user_id,
+        email_enabled=prefs.email_enabled,
+        sms_enabled=prefs.sms_enabled,
+        whatsapp_enabled=prefs.whatsapp_enabled,
+        push_enabled=prefs.push_enabled,
+        webhook_enabled=prefs.webhook_enabled,
+        phone_number=prefs.phone_number,
+        webhook_url=prefs.webhook_url,
+        digest_frequency=prefs.digest_frequency,
+        min_priority=prefs.min_priority,
+        watched_regions=prefs.watched_regions,
+        watched_categories=prefs.watched_categories,
+        quiet_hours_enabled=prefs.quiet_hours_enabled,
+        quiet_hours_start=prefs.quiet_hours_start.strftime("%H:%M") if prefs.quiet_hours_start else None,
+        quiet_hours_end=prefs.quiet_hours_end.strftime("%H:%M") if prefs.quiet_hours_end else None,
+    )
+
+
+@app.put("/api/notifications/preferences", tags=["notifications"])
+async def update_notification_preferences(
+    payload: NotificationPreferencesCreate,
+    current_user: TokenData = Depends(get_current_user),
+    session=Depends(get_session),
+) -> NotificationPreferencesResponse:
+    """Update current user's notification preferences."""
+    from sqlalchemy import select
+    from backend.alerts.notification_preferences import NotificationPreferencesRecord
+    from datetime import time
+    
+    result = await session.execute(
+        select(NotificationPreferencesRecord)
+        .where(NotificationPreferencesRecord.user_id == current_user.user_id)
+    )
+    prefs = result.scalar_one_or_none()
+    
+    # Parse quiet hours
+    quiet_start = None
+    quiet_end = None
+    if payload.quiet_hours_start:
+        try:
+            h, m = map(int, payload.quiet_hours_start.split(":"))
+            quiet_start = time(h, m)
+        except ValueError:
+            pass
+    if payload.quiet_hours_end:
+        try:
+            h, m = map(int, payload.quiet_hours_end.split(":"))
+            quiet_end = time(h, m)
+        except ValueError:
+            pass
+    
+    if prefs:
+        # Update existing
+        prefs.email_enabled = payload.email_enabled
+        prefs.sms_enabled = payload.sms_enabled
+        prefs.whatsapp_enabled = payload.whatsapp_enabled
+        prefs.push_enabled = payload.push_enabled
+        prefs.webhook_enabled = payload.webhook_enabled
+        prefs.phone_number = payload.phone_number
+        prefs.webhook_url = payload.webhook_url
+        prefs.digest_frequency = payload.digest_frequency
+        prefs.min_priority = payload.min_priority
+        prefs.watched_regions = payload.watched_regions
+        prefs.watched_categories = payload.watched_categories
+        prefs.quiet_hours_enabled = payload.quiet_hours_enabled
+        prefs.quiet_hours_start = quiet_start
+        prefs.quiet_hours_end = quiet_end
+    else:
+        # Create new
+        prefs = NotificationPreferencesRecord(
+            user_id=current_user.user_id,
+            email_enabled=payload.email_enabled,
+            sms_enabled=payload.sms_enabled,
+            whatsapp_enabled=payload.whatsapp_enabled,
+            push_enabled=payload.push_enabled,
+            webhook_enabled=payload.webhook_enabled,
+            phone_number=payload.phone_number,
+            webhook_url=payload.webhook_url,
+            digest_frequency=payload.digest_frequency,
+            min_priority=payload.min_priority,
+            watched_regions=payload.watched_regions,
+            watched_categories=payload.watched_categories,
+            quiet_hours_enabled=payload.quiet_hours_enabled,
+            quiet_hours_start=quiet_start,
+            quiet_hours_end=quiet_end,
+        )
+        session.add(prefs)
+    
+    await session.commit()
+    await session.refresh(prefs)
+    
+    return NotificationPreferencesResponse(
+        id=prefs.id,
+        user_id=prefs.user_id,
+        email_enabled=prefs.email_enabled,
+        sms_enabled=prefs.sms_enabled,
+        whatsapp_enabled=prefs.whatsapp_enabled,
+        push_enabled=prefs.push_enabled,
+        webhook_enabled=prefs.webhook_enabled,
+        phone_number=prefs.phone_number,
+        webhook_url=prefs.webhook_url,
+        digest_frequency=prefs.digest_frequency,
+        min_priority=prefs.min_priority,
+        watched_regions=prefs.watched_regions,
+        watched_categories=prefs.watched_categories,
+        quiet_hours_enabled=prefs.quiet_hours_enabled,
+        quiet_hours_start=prefs.quiet_hours_start.strftime("%H:%M") if prefs.quiet_hours_start else None,
+        quiet_hours_end=prefs.quiet_hours_end.strftime("%H:%M") if prefs.quiet_hours_end else None,
+    )
+
+
+# =============================================================================
+# Alert Acknowledgment API
+# =============================================================================
+
+class AcknowledgeAlertRequest(BaseModel):
+    """Request to acknowledge an alert."""
+    event_id: str
+    notes: Optional[str] = None
+
+
+@app.post("/api/alerts/acknowledge", tags=["alerts"])
+async def acknowledge_alert(
+    payload: AcknowledgeAlertRequest,
+    current_user: TokenData = Depends(get_current_user),
+    session=Depends(get_session),
+) -> dict:
+    """Acknowledge an alert for the current user."""
+    from backend.alerts.alert_engine import alert_engine
+    
+    success = await alert_engine.acknowledge_alert(
+        session,
+        user_id=current_user.user_id,
+        event_id=payload.event_id,
+        notes=payload.notes,
+    )
+    
+    if success:
+        return {"message": "Alert acknowledged"}
+    else:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+
+@app.get("/api/alerts/unacknowledged", tags=["alerts"])
+async def get_unacknowledged_alerts(
+    current_user: TokenData = Depends(get_current_user),
+    session=Depends(get_session),
+    limit: int = Query(default=50, le=100),
+) -> List[dict]:
+    """Get unacknowledged alerts for the current user."""
+    from sqlalchemy import select, and_
+    from backend.alerts.notification_preferences import SentNotificationRecord
+    
+    result = await session.execute(
+        select(SentNotificationRecord)
+        .where(and_(
+            SentNotificationRecord.user_id == current_user.user_id,
+            SentNotificationRecord.status == "sent",
+            SentNotificationRecord.acknowledged_at.is_(None),
+        ))
+        .order_by(SentNotificationRecord.created_at.desc())
+        .limit(limit)
+    )
+    
+    notifications = result.scalars().all()
+    
+    # Get event details
+    alerts = []
+    for notification in notifications:
+        event = await get_event_by_id(session, notification.event_id)
+        if event:
+            alerts.append({
+                "notification_id": notification.id,
+                "event_id": notification.event_id,
+                "channel": notification.channel,
+                "sent_at": notification.sent_at.isoformat() if notification.sent_at else None,
+                "event": {
+                    "title": event.title,
+                    "summary": event.summary[:200] if event.summary else None,
+                    "region": event.region,
+                    "category": event.category,
+                    "threat_level": event.threat_level,
+                    "link": event.link,
+                },
+            })
+    
+    return alerts
+
+
+# =============================================================================
+# Data Sources Status API
+# =============================================================================
+
+@app.get("/api/sources/status", tags=["sources"])
+async def get_data_sources_status() -> dict:
+    """Get status of all data sources."""
+    import os
+    
+    sources = {
+        "gdacs": {
+            "name": "GDACS Disasters",
+            "enabled": os.getenv("GDACS_ENABLED", "true").lower() == "true",
+            "description": "Global Disaster Alert and Coordination System",
+            "url": "https://www.gdacs.org",
+            "requires_api_key": False,
+        },
+        "reliefweb": {
+            "name": "ReliefWeb",
+            "enabled": os.getenv("RELIEFWEB_ENABLED", "true").lower() == "true",
+            "description": "Humanitarian information on global crises",
+            "url": "https://reliefweb.int",
+            "requires_api_key": False,
+        },
+        "who": {
+            "name": "WHO Outbreaks",
+            "enabled": os.getenv("WHO_ENABLED", "true").lower() == "true",
+            "description": "Disease outbreak news from WHO",
+            "url": "https://www.who.int",
+            "requires_api_key": False,
+        },
+        "acled": {
+            "name": "ACLED Conflicts",
+            "enabled": os.getenv("ACLED_ENABLED", "true").lower() == "true" and bool(os.getenv("ACLED_API_KEY")),
+            "description": "Armed Conflict Location & Event Data",
+            "url": "https://acleddata.com",
+            "requires_api_key": True,
+            "api_key_configured": bool(os.getenv("ACLED_API_KEY")),
+        },
+        "social": {
+            "name": "Social Media",
+            "enabled": os.getenv("SOCIAL_ENABLED", "true").lower() == "true",
+            "description": "Twitter/Telegram crisis monitoring",
+            "requires_api_key": False,
+        },
+    }
+    
+    return {
+        "sources": sources,
+        "total_enabled": sum(1 for s in sources.values() if s["enabled"]),
+    }
