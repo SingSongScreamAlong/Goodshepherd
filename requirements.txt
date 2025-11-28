@@ -57,3 +57,7 @@ pytest==8.3.3
 pytest-asyncio==0.24.0
 pytest-cov==6.0.0
 httpx[http2]==0.28.1
+
+# Machine Learning
+scikit-learn==1.5.2
+numpy==2.1.3

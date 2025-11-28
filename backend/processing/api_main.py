@@ -2112,3 +2112,159 @@ async def get_data_sources_status() -> dict:
         "sources": sources,
         "total_enabled": sum(1 for s in sources.values() if s["enabled"]),
     }
+
+
+# =============================================================================
+# ML Model API
+# =============================================================================
+
+class TranslateRequest(BaseModel):
+    """Translation request."""
+    text: str
+    source_language: Optional[str] = None
+    target_language: Optional[str] = None
+
+
+class ThreatClassifyRequest(BaseModel):
+    """Threat classification request."""
+    text: str
+    title: Optional[str] = None
+    source_credibility: float = 0.7
+
+
+class DisinfoCheckRequest(BaseModel):
+    """Disinformation check request."""
+    text: str
+    source_url: Optional[str] = None
+    source_name: Optional[str] = None
+
+
+class AnalyzeEventRequest(BaseModel):
+    """Full event analysis request."""
+    text: str
+    title: Optional[str] = None
+    source_url: Optional[str] = None
+    source_name: Optional[str] = None
+    source_credibility: float = 0.7
+    translate: bool = True
+
+
+class AnalyzeBatchRequest(BaseModel):
+    """Batch analysis request."""
+    events: list[dict]
+    translate: bool = True
+
+
+@app.post("/api/ml/translate", tags=["ml"])
+async def translate_text(request: TranslateRequest) -> dict:
+    """Translate text to target language."""
+    from backend.ml.model_service import get_model_service
+    
+    service = get_model_service()
+    result = await service.translate(
+        text=request.text,
+        source_language=request.source_language,
+        target_language=request.target_language,
+    )
+    
+    return {
+        "original_text": result.original_text,
+        "translated_text": result.translated_text,
+        "source_language": result.source_language,
+        "target_language": result.target_language,
+        "confidence": result.confidence,
+        "provider": result.provider,
+        "cached": result.cached,
+    }
+
+
+@app.post("/api/ml/detect-language", tags=["ml"])
+async def detect_language(text: str = Query(..., min_length=1)) -> dict:
+    """Detect the language of text."""
+    from backend.ml.translation import get_translation_service
+    
+    service = get_translation_service()
+    result = await service.detect_language(text)
+    
+    return {
+        "language": result.language,
+        "language_name": result.language_name,
+        "confidence": result.confidence,
+    }
+
+
+@app.post("/api/ml/classify-threat", tags=["ml"])
+async def classify_threat(request: ThreatClassifyRequest) -> dict:
+    """Classify threat level and category."""
+    from backend.ml.model_service import get_model_service
+    
+    service = get_model_service()
+    result = service.classify_threat(
+        text=request.text,
+        title=request.title,
+        source_credibility=request.source_credibility,
+    )
+    
+    return result.to_dict()
+
+
+@app.post("/api/ml/check-disinfo", tags=["ml"])
+async def check_disinformation(request: DisinfoCheckRequest) -> dict:
+    """Check content for disinformation indicators."""
+    from backend.ml.model_service import get_model_service
+    
+    service = get_model_service()
+    result = service.detect_disinfo(
+        text=request.text,
+        source_url=request.source_url,
+        source_name=request.source_name,
+    )
+    
+    return result.to_dict()
+
+
+@app.post("/api/ml/analyze", tags=["ml"])
+async def analyze_event(request: AnalyzeEventRequest) -> dict:
+    """Perform complete ML analysis on an event."""
+    from backend.ml.model_service import get_model_service
+    
+    service = get_model_service()
+    result = await service.analyze_event(
+        text=request.text,
+        title=request.title,
+        source_url=request.source_url,
+        source_name=request.source_name,
+        source_credibility=request.source_credibility,
+        translate=request.translate,
+    )
+    
+    return result.to_dict()
+
+
+@app.post("/api/ml/analyze-batch", tags=["ml"])
+async def analyze_events_batch(request: AnalyzeBatchRequest) -> dict:
+    """Analyze multiple events in batch."""
+    from backend.ml.model_service import get_model_service
+    
+    if len(request.events) > 50:
+        raise HTTPException(status_code=400, detail="Maximum 50 events per batch")
+    
+    service = get_model_service()
+    results = await service.analyze_batch(
+        events=request.events,
+        translate=request.translate,
+    )
+    
+    return {
+        "count": len(results),
+        "results": [r.to_dict() for r in results],
+    }
+
+
+@app.get("/api/ml/status", tags=["ml"])
+async def get_ml_status() -> dict:
+    """Get ML service status."""
+    from backend.ml.model_service import get_model_service
+    
+    service = get_model_service()
+    return service.get_status()

@@ -21,6 +21,7 @@ from backend.database.models import EventRecord
 from backend.geocode.nominatim import GeocodeError, get_geocode_client
 from backend.search.client import SearchClientError, get_search_client
 from backend.processing.verification import evaluate_event
+from backend.ml.model_service import ModelService, get_model_service
 
 from backend.utils.queue import (
     QueueConfig,
@@ -51,6 +52,7 @@ class EventProcessor:
         self._redis = None
         self._search_client = None
         self._geocode_client = None
+        self._ml_service: ModelService | None = None
 
     async def start(self) -> None:
         """Start consuming events until stopped."""
@@ -60,6 +62,8 @@ class EventProcessor:
         self._redis = await create_redis_connection(self.settings.queue)
         self._search_client = await get_search_client()
         self._geocode_client = await get_geocode_client()
+        self._ml_service = get_model_service()
+        await self._ml_service.initialize()
         await ensure_consumer_group(
             self._redis,
             self.settings.queue.stream,
@@ -105,6 +109,8 @@ class EventProcessor:
                 await self._search_client.close()
             if self._geocode_client:
                 await self._geocode_client.close()
+            if self._ml_service:
+                await self._ml_service.close()
 
     async def stop(self) -> None:
         """Signal the processor to shut down."""
@@ -132,6 +138,28 @@ class EventProcessor:
 
         verification = evaluate_event(payload)
 
+        # ML-based analysis (translation, threat classification, disinfo detection)
+        ml_analysis = None
+        if self._ml_service:
+            try:
+                text = payload.get("summary") or payload.get("title") or ""
+                ml_analysis = await self._ml_service.analyze_event(
+                    text=text,
+                    title=payload.get("title"),
+                    source_url=payload.get("source_url"),
+                    source_name=payload.get("source"),
+                    source_credibility=verification.credibility_score or 0.7,
+                    translate=True,
+                )
+                logger.debug(
+                    "ML analysis: threat=%s, disinfo=%s, lang=%s",
+                    ml_analysis.threat.threat_level.value,
+                    ml_analysis.disinfo.risk_level.value,
+                    ml_analysis.source_language,
+                )
+            except Exception:
+                logger.exception("ML analysis failed for event")
+
         geocode_data = None
         if self._geocode_client:
             query = ", ".join(
@@ -145,21 +173,41 @@ class EventProcessor:
                 except GeocodeError:
                     logger.exception("Failed to geocode payload %s", payload)
 
+        # Determine threat level from ML or verification
+        threat_level = verification.threat_level
+        if ml_analysis and ml_analysis.threat.threat_score > 0.3:
+            threat_level = ml_analysis.threat.threat_level.value
+
+        # Adjust credibility based on disinfo detection
+        credibility = verification.credibility_score or confidence
+        if ml_analysis and ml_analysis.disinfo.risk_score > 0.5:
+            credibility = max(0.1, credibility - 0.2)  # Reduce credibility for potential disinfo
+
+        # Build ML metadata
+        ml_metadata = None
+        if ml_analysis:
+            ml_metadata = {
+                "source_language": ml_analysis.source_language,
+                "translated": ml_analysis.source_language != "en",
+                "threat": ml_analysis.threat.to_dict(),
+                "disinfo": ml_analysis.disinfo.to_dict(),
+            }
+
         enriched = EventCreate(
             source_url=payload.get("source_url"),
-            category=payload.get("category"),
+            category=ml_analysis.threat.category.value if ml_analysis else payload.get("category"),
             region=payload.get("region"),
             title=payload.get("title"),
-            summary=payload.get("summary"),
+            summary=ml_analysis.translated_text if ml_analysis and ml_analysis.source_language != "en" else payload.get("summary"),
             link=payload.get("link"),
             published_at=parse_datetime(payload.get("published_at")),
             fetched_at=parse_datetime(payload.get("fetched_at")) or datetime.utcnow(),
             geocode=geocode_data,
-            confidence=verification.credibility_score or confidence,
+            confidence=credibility,
             verification_status=verification.verification_status,
-            credibility_score=verification.credibility_score,
-            threat_level=verification.threat_level,
-            raw=json.dumps(payload),
+            credibility_score=credibility,
+            threat_level=threat_level,
+            raw=json.dumps({**payload, "ml_analysis": ml_metadata}),
         )
         return enriched
 
