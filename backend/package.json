@@ -1,0 +1,22 @@
+{
+  "name": "good-shepherd-rss-collector",
+  "version": "1.0.0",
+  "description": "Legacy RSS collector for Good Shepherd (prefer Python ingestion service)",
+  "main": "rss-collector.js",
+  "scripts": {
+    "start": "node rss-collector.js",
+    "dev": "node --watch rss-collector.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["rss", "osint", "threat-intelligence"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.1",
+    "rss-parser": "^3.13.0",
+    "puppeteer": "^23.7.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

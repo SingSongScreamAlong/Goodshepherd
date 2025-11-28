@@ -1,0 +1,26 @@
+{
+    email {$ACME_EMAIL}
+    auto_https off
+}
+
+:80 {
+    @api path /api/*
+    handle @api {
+        reverse_proxy backend-api:8000
+    }
+
+    handle {
+        reverse_proxy frontend:80
+    }
+}
+
+{$DOMAIN} {
+    encode zstd gzip
+    handle_path /api/* {
+        reverse_proxy backend-api:8000
+    }
+
+    handle {
+        reverse_proxy frontend:80
+    }
+}
