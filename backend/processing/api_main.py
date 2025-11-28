@@ -2268,3 +2268,162 @@ async def get_ml_status() -> dict:
     
     service = get_model_service()
     return service.get_status()
+
+
+# =============================================================================
+# Analytics API (Phase 3: Analyst Dashboard)
+# =============================================================================
+
+@app.get("/api/analytics/summary", tags=["analytics"])
+async def get_analytics_summary(period: str = Query("7d", regex="^(24h|7d|30d|90d)$")) -> dict:
+    """Get analytics summary for the specified period."""
+    from backend.analytics.service import get_analytics_service
+    
+    service = get_analytics_service()
+    return await service.get_summary(period=period)
+
+
+@app.get("/api/analytics/trends", tags=["analytics"])
+async def get_threat_trends(
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    granularity: str = Query("day", regex="^(hour|day)$"),
+) -> dict:
+    """Get event trends over time."""
+    from backend.analytics.service import get_analytics_service
+    
+    service = get_analytics_service()
+    return await service.get_trends(
+        start_date=start_date,
+        end_date=end_date,
+        granularity=granularity,
+    )
+
+
+@app.get("/api/analytics/regions", tags=["analytics"])
+async def get_regional_breakdown(period: str = Query("7d", regex="^(24h|7d|30d|90d)$")) -> dict:
+    """Get breakdown by region."""
+    from backend.analytics.service import get_analytics_service
+    
+    service = get_analytics_service()
+    return await service.get_regional_breakdown(period=period)
+
+
+@app.get("/api/events/timeline", tags=["analytics"])
+async def get_timeline_events(
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    category: Optional[str] = None,
+    region: Optional[str] = None,
+    limit: int = Query(200, le=500),
+) -> dict:
+    """Get events for timeline visualization."""
+    from backend.analytics.service import get_analytics_service
+    
+    service = get_analytics_service()
+    return await service.get_timeline_events(
+        start_date=start_date,
+        end_date=end_date,
+        category=category,
+        region=region,
+        limit=limit,
+    )
+
+
+@app.get("/api/analyst/review-queue", tags=["analytics"])
+async def get_review_queue(
+    status: str = Query("pending", regex="^(pending|flagged|verified)$"),
+    priority: Optional[str] = Query(None, regex="^(urgent|high|normal|low)$"),
+    limit: int = Query(50, le=100),
+) -> dict:
+    """Get events for analyst review queue."""
+    from backend.analytics.service import get_analytics_service
+    
+    service = get_analytics_service()
+    return await service.get_review_queue(
+        status=status,
+        priority=priority,
+        limit=limit,
+    )
+
+
+class ValidationRequest(BaseModel):
+    """Event validation request."""
+    status: str
+    notes: Optional[str] = None
+
+
+@app.post("/api/analyst/validate/{event_id}", tags=["analytics"])
+async def validate_event(
+    event_id: str,
+    request: ValidationRequest,
+    current_user: TokenData = Depends(get_current_user),
+) -> dict:
+    """Submit event validation (human-in-loop)."""
+    from backend.database.repository import update_event_verification, VerificationUpdate
+    from backend.database.session import session_scope
+    from uuid import UUID
+    
+    async with session_scope() as session:
+        await update_event_verification(
+            session,
+            UUID(event_id),
+            VerificationUpdate(
+                verification_status=request.status,
+            ),
+        )
+    
+    return {
+        "success": True,
+        "event_id": event_id,
+        "status": request.status,
+        "validated_by": current_user.username,
+    }
+
+
+class MLFeedbackRequest(BaseModel):
+    """ML feedback request."""
+    event_id: str
+    corrected_category: Optional[str] = None
+    corrected_threat_level: Optional[str] = None
+    is_disinformation: bool = False
+    analyst_notes: Optional[str] = None
+
+
+@app.post("/api/ml/feedback", tags=["analytics"])
+async def submit_ml_feedback(
+    request: MLFeedbackRequest,
+    current_user: TokenData = Depends(get_current_user),
+) -> dict:
+    """Submit ML feedback for model improvement."""
+    from backend.analytics.ml_feedback import get_ml_feedback_service
+    
+    service = get_ml_feedback_service()
+    return await service.submit_feedback(
+        event_id=request.event_id,
+        feedback={
+            "corrected_category": request.corrected_category,
+            "corrected_threat_level": request.corrected_threat_level,
+            "is_disinformation": request.is_disinformation,
+            "analyst_notes": request.analyst_notes,
+        },
+        analyst_id=current_user.username,
+    )
+
+
+@app.get("/api/ml/feedback/stats", tags=["analytics"])
+async def get_ml_feedback_stats() -> dict:
+    """Get ML feedback statistics."""
+    from backend.analytics.ml_feedback import get_ml_feedback_service
+    
+    service = get_ml_feedback_service()
+    stats = service.get_feedback_stats()
+    
+    return {
+        "total_feedback": stats.total_feedback,
+        "category_corrections": stats.category_corrections,
+        "threat_corrections": stats.threat_corrections,
+        "disinfo_flags": stats.disinfo_flags,
+        "accuracy_by_category": stats.accuracy_by_category,
+        "accuracy_by_threat": stats.accuracy_by_threat,
+    }
