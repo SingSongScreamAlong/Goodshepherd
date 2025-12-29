@@ -13,6 +13,7 @@ import Dossiers from './pages/Dossiers';
 import Dashboard from './pages/Dashboard';
 import AuditLog from './pages/AuditLog';
 import OrganizationSettings from './pages/OrganizationSettings';
+import WorldAwarenessDashboard from './pages/WorldAwarenessDashboard';
 
 export default function App() {
   return (
@@ -26,6 +27,26 @@ export default function App() {
           {/* Protected routes */}
           <Route
             path="/"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WorldAwarenessDashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/awareness"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WorldAwarenessDashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stream"
             element={
               <ProtectedRoute>
                 <Layout>
@@ -88,3 +109,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+

@@ -34,43 +34,48 @@ export default function Layout({ children }: LayoutProps) {
               <div className="hidden md:flex ml-10 space-x-8">
                 <Link
                   to="/"
-                  className={`px-3 py-2 text-sm font-medium ${
-                    location.pathname === '/'
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/' || location.pathname === '/awareness'
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
+                >
+                  Awareness
+                </Link>
+                <Link
+                  to="/stream"
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/stream'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
+                      : 'text-gray-700 hover:text-gray-900'
+                    }`}
                 >
                   Stream
                 </Link>
                 <Link
                   to="/map"
-                  className={`px-3 py-2 text-sm font-medium ${
-                    location.pathname === '/map'
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/map'
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Map
                 </Link>
                 <Link
                   to="/dossiers"
-                  className={`px-3 py-2 text-sm font-medium ${
-                    location.pathname === '/dossiers'
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/dossiers'
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Dossiers
                 </Link>
                 <Link
                   to="/dashboard"
-                  className={`px-3 py-2 text-sm font-medium ${
-                    location.pathname === '/dashboard'
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/dashboard'
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
-                  Dashboard
+                  Analytics
                 </Link>
 
                 {/* Admin Section */}
@@ -79,21 +84,19 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
                 <Link
                   to="/audit"
-                  className={`px-3 py-2 text-sm font-medium ${
-                    location.pathname === '/audit'
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/audit'
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Audit Log
                 </Link>
                 <Link
                   to="/settings"
-                  className={`px-3 py-2 text-sm font-medium ${
-                    location.pathname === '/settings'
+                  className={`px-3 py-2 text-sm font-medium ${location.pathname === '/settings'
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-700 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   Settings
                 </Link>
