@@ -12,6 +12,7 @@ from backend.core.database import check_db_connection, check_postgis_available
 from backend.core.middleware import RequestTrackingMiddleware, SecurityHeadersMiddleware
 from backend.routers import auth, events, ingest, dossiers, dashboard, monitoring, feedback, audit, org_settings
 from backend.routers import incidents, reports, regions, indicators
+from backend.routers import admin as admin_router
 
 # Setup logging
 setup_logging()
@@ -115,6 +116,7 @@ app.include_router(incidents.router)
 app.include_router(reports.router)
 app.include_router(regions.router)
 app.include_router(indicators.router)
+app.include_router(admin_router.router)
 
 
 # Global exception handler
