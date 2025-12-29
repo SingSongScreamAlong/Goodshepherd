@@ -106,15 +106,15 @@ Confidence scoring with:
 - Official confirmation boost (+20%)
 - Penalties for recycled media, geo/time inconsistency
 
-Confidence → Status mapping:
-| Confidence | Status | Notes |
+Confidence → Status mapping (thresholds set high - lives depend on accuracy):
+| Confidence | Status | Meaning |
 |------------|--------|-------|
-| < 30% | UNVERIFIED | Unsubstantiated claims |
-| 30-59% | DEVELOPING | Some supporting evidence |
-| 60%+ | CORROBORATED | Multiple sources align |
+| < 40% | UNVERIFIED | Unsubstantiated claim |
+| 40-74% | DEVELOPING | Being verified, not yet reliable |
+| 75%+ | CORROBORATED | Strong multi-source evidence |
 | N/A | CONFIRMED | **Admin verification only** |
 
-> **Important:** CONFIRMED status is never set algorithmically. It requires explicit admin verification to ensure accuracy.
+> **Important:** CONFIRMED status is never set algorithmically. It requires explicit admin verification. CORROBORATED requires 75%+ confidence from multiple independent sources.
 
 ## Report Generation (`backend/services/report_service.py`)
 

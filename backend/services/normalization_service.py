@@ -364,14 +364,17 @@ class NormalizationService:
     def _confidence_to_status(self, confidence: float) -> IncidentStatus:
         """Map confidence score to incident status.
         
-        Note: CONFIRMED requires admin verification.
-        Max algorithmic status is CORROBORATED.
+        Thresholds set high because lives depend on accuracy:
+        - < 40%: UNVERIFIED
+        - 40-74%: DEVELOPING  
+        - 75%+: CORROBORATED
+        - CONFIRMED: Admin only
         """
         conf_percent = confidence * 100
         
-        if conf_percent < 30:
+        if conf_percent < 40:
             return IncidentStatus.UNVERIFIED
-        elif conf_percent < 60:
+        elif conf_percent < 75:
             return IncidentStatus.DEVELOPING
         else:
             # Max algorithmic status - CONFIRMED requires admin action

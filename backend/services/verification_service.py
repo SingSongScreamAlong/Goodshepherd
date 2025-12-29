@@ -34,12 +34,12 @@ class VerificationService:
     
     def __init__(self):
         """Initialize verification service."""
-        # Confidence thresholds
+        # Confidence thresholds - set high because lives depend on accuracy
         # Note: CONFIRMED status requires admin verification - cannot be set algorithmically
-        self.UNVERIFIED_THRESHOLD = 30
-        self.DEVELOPING_THRESHOLD = 60
-        # CORROBORATED is the max algorithmic status (60%+)
-        # CONFIRMED requires explicit admin confirmation
+        self.UNVERIFIED_THRESHOLD = 40   # Below 40% = unsubstantiated
+        self.DEVELOPING_THRESHOLD = 75   # 40-74% = still developing
+        # CORROBORATED requires 75%+ (strong multi-source evidence)
+        # CONFIRMED requires explicit admin verification
         
         # Boost values
         self.CORROBORATION_BOOST = 0.10  # Per additional source

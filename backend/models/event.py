@@ -198,16 +198,19 @@ class Event(Base):
         """
         Compute verification status from confidence score.
         
-        Note: CONFIRMED status requires admin verification.
-        Algorithmic scoring can only reach CORROBORATED.
+        Thresholds set high because lives depend on accuracy:
+        - < 40%: UNVERIFIED (unsubstantiated)
+        - 40-74%: DEVELOPING (working to verify)
+        - 75%+: CORROBORATED (strong multi-source evidence)
+        - CONFIRMED: Admin verification only
         
         Returns:
             IncidentStatus based on confidence thresholds
         """
         conf = self.confidence_percent
-        if conf < 30:
+        if conf < 40:
             return IncidentStatus.UNVERIFIED
-        elif conf < 60:
+        elif conf < 75:
             return IncidentStatus.DEVELOPING
         else:
             # Max algorithmic status - CONFIRMED requires admin action
