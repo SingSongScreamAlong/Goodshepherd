@@ -362,17 +362,20 @@ class NormalizationService:
         return round(confidence, 2)
     
     def _confidence_to_status(self, confidence: float) -> IncidentStatus:
-        """Map confidence score to incident status."""
+        """Map confidence score to incident status.
+        
+        Note: CONFIRMED requires admin verification.
+        Max algorithmic status is CORROBORATED.
+        """
         conf_percent = confidence * 100
         
         if conf_percent < 30:
             return IncidentStatus.UNVERIFIED
         elif conf_percent < 60:
             return IncidentStatus.DEVELOPING
-        elif conf_percent < 85:
-            return IncidentStatus.CORROBORATED
         else:
-            return IncidentStatus.CONFIRMED
+            # Max algorithmic status - CONFIRMED requires admin action
+            return IncidentStatus.CORROBORATED
     
     def _extract_domain_tags(
         self,

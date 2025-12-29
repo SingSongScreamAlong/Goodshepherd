@@ -35,9 +35,11 @@ class VerificationService:
     def __init__(self):
         """Initialize verification service."""
         # Confidence thresholds
+        # Note: CONFIRMED status requires admin verification - cannot be set algorithmically
         self.UNVERIFIED_THRESHOLD = 30
         self.DEVELOPING_THRESHOLD = 60
-        self.CORROBORATED_THRESHOLD = 85
+        # CORROBORATED is the max algorithmic status (60%+)
+        # CONFIRMED requires explicit admin confirmation
         
         # Boost values
         self.CORROBORATION_BOOST = 0.10  # Per additional source
@@ -112,11 +114,14 @@ class VerificationService:
         """
         Map confidence score to verification status.
         
+        Note: CONFIRMED status is NEVER set algorithmically.
+        It requires explicit admin verification.
+        
         Args:
             confidence: Confidence score 0.0-1.0
             
         Returns:
-            Appropriate IncidentStatus
+            Appropriate IncidentStatus (max: CORROBORATED)
         """
         conf_percent = confidence * 100
         
@@ -124,10 +129,10 @@ class VerificationService:
             return IncidentStatus.UNVERIFIED
         elif conf_percent < self.DEVELOPING_THRESHOLD:
             return IncidentStatus.DEVELOPING
-        elif conf_percent < self.CORROBORATED_THRESHOLD:
-            return IncidentStatus.CORROBORATED
         else:
-            return IncidentStatus.CONFIRMED
+            # Max algorithmic status is CORROBORATED
+            # CONFIRMED requires admin verification
+            return IncidentStatus.CORROBORATED
     
     def update_incident_verification(
         self,

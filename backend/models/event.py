@@ -198,6 +198,9 @@ class Event(Base):
         """
         Compute verification status from confidence score.
         
+        Note: CONFIRMED status requires admin verification.
+        Algorithmic scoring can only reach CORROBORATED.
+        
         Returns:
             IncidentStatus based on confidence thresholds
         """
@@ -206,10 +209,9 @@ class Event(Base):
             return IncidentStatus.UNVERIFIED
         elif conf < 60:
             return IncidentStatus.DEVELOPING
-        elif conf < 85:
-            return IncidentStatus.CORROBORATED
         else:
-            return IncidentStatus.CONFIRMED
+            # Max algorithmic status - CONFIRMED requires admin action
+            return IncidentStatus.CORROBORATED
     
     @property
     def is_verified(self) -> bool:

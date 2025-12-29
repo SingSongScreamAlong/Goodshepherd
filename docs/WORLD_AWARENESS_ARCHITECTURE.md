@@ -107,12 +107,14 @@ Confidence scoring with:
 - Penalties for recycled media, geo/time inconsistency
 
 Confidence → Status mapping:
-| Confidence | Status |
-|------------|--------|
-| < 30% | UNVERIFIED |
-| 30-59% | DEVELOPING |
-| 60-84% | CORROBORATED |
-| 85%+ | CONFIRMED |
+| Confidence | Status | Notes |
+|------------|--------|-------|
+| < 30% | UNVERIFIED | Unsubstantiated claims |
+| 30-59% | DEVELOPING | Some supporting evidence |
+| 60%+ | CORROBORATED | Multiple sources align |
+| N/A | CONFIRMED | **Admin verification only** |
+
+> **Important:** CONFIRMED status is never set algorithmically. It requires explicit admin verification to ensure accuracy.
 
 ## Report Generation (`backend/services/report_service.py`)
 
