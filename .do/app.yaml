@@ -1,0 +1,62 @@
+spec:
+  name: good-shepherd
+  region: nyc
+  
+  # Backend API Service
+  services:
+    - name: api
+      github:
+        repo: SingSongScreamAlong/Goodshepherd
+        branch: world-awareness-redesign
+        deploy_on_push: true
+      source_dir: /backend
+      dockerfile_path: Dockerfile
+      http_port: 8000
+      instance_count: 1
+      instance_size_slug: basic-xs
+      routes:
+        - path: /api
+          preserve_path_prefix: true
+      envs:
+        - key: DATABASE_URL
+          scope: RUN_TIME
+          type: SECRET
+          value: "postgresql://user:pass@host:25060/defaultdb?sslmode=require"
+        - key: JWT_SECRET_KEY
+          scope: RUN_TIME
+          type: SECRET
+          value: "CHANGE_ME"
+        - key: CORS_ORIGINS
+          scope: RUN_TIME
+          value: "*"
+        - key: LOG_LEVEL
+          scope: RUN_TIME
+          value: INFO
+        - key: ENVIRONMENT
+          scope: RUN_TIME
+          value: production
+        - key: REDIS_URL
+          scope: RUN_TIME
+          value: "redis://localhost:6379"
+      health_check:
+        http_path: /monitoring/health/live
+        initial_delay_seconds: 60
+        period_seconds: 30
+
+  # Frontend Static Site  
+  static_sites:
+    - name: web
+      github:
+        repo: SingSongScreamAlong/Goodshepherd
+        branch: world-awareness-redesign
+        deploy_on_push: true
+      source_dir: /frontend
+      build_command: npm install && npm run build
+      output_dir: dist
+      envs:
+        - key: VITE_API_URL
+          scope: BUILD_TIME
+          value: "${APP_URL}/api"
+      routes:
+        - path: /
+      catchall_document: index.html
