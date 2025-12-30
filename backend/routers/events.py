@@ -30,7 +30,7 @@ def get_events(
     end_date: Optional[datetime] = Query(None, description="Filter events before this date"),
     min_relevance: Optional[float] = Query(None, ge=0.0, le=1.0, description="Minimum relevance score"),
     page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    page_size: int = Query(20, ge=1, le=1000, description="Number of items per page"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
