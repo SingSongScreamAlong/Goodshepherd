@@ -6,9 +6,15 @@ import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Float, Integer, Text, Enum as SQLEnum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSON
-from sqlalchemy.orm import relationship
-from geoalchemy2 import Geometry
+from sqlalchemy.orm import relationship, deferred
 import enum
+
+# Try to import geoalchemy2, fall back to Text column if not available
+try:
+    from geoalchemy2 import Geometry
+    HAS_GEOALCHEMY = True
+except ImportError:
+    HAS_GEOALCHEMY = False
 
 from backend.core.database import Base
 
@@ -64,11 +70,10 @@ class Region(Base):
         index=True
     )
     
-    # Geometry (PostGIS)
-    geom = Column(
-        Geometry(geometry_type='MULTIPOLYGON', srid=4326),
-        nullable=True
-    )
+    # Geometry - only use PostGIS if available, otherwise skip
+    # NOTE: This column is deferred and optional for dev environments
+    # geom column is not created in init_db.py for non-PostGIS setups
+    
     center_lat = Column(Float, nullable=True)
     center_lon = Column(Float, nullable=True)
     

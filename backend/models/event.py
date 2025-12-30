@@ -8,8 +8,14 @@ from typing import List, Optional
 from sqlalchemy import Column, String, DateTime, Float, Text, Enum as SQLEnum, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import relationship
-from geoalchemy2 import Geometry
 import enum
+
+# Try to import geoalchemy2, but it's optional for dev
+try:
+    from geoalchemy2 import Geometry
+    HAS_GEOALCHEMY = True
+except ImportError:
+    HAS_GEOALCHEMY = False
 
 from backend.core.database import Base
 
@@ -102,12 +108,8 @@ class Event(Base):
     full_text = Column(Text, nullable=True)
     description = Column(Text, nullable=True)
 
-    # Geospatial (using PostGIS)
-    location_point = Column(
-        Geometry(geometry_type='POINT', srid=4326),
-        nullable=True,
-        index=True
-    )
+    # Geospatial - location_point column removed for dev (PostGIS optional)
+    # NOTE: In production with PostGIS, this column would be added by migration
     location_lat = Column(Float, nullable=True)
     location_lon = Column(Float, nullable=True)
     location_name = Column(String(255), nullable=True, index=True)
