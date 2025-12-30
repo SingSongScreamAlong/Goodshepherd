@@ -31,14 +31,23 @@ Base = declarative_base()
 
 @event.listens_for(engine, "connect")
 def enable_postgis(dbapi_connection, connection_record):
-    """Enable PostGIS extension on database connection."""
+    """Enable PostGIS extension on database connection (optional for dev)."""
     cursor = dbapi_connection.cursor()
     try:
         cursor.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         dbapi_connection.commit()
         logger.info("PostGIS extension enabled")
     except Exception as e:
-        logger.warning("Could not enable PostGIS", error=str(e))
+        # PostGIS is optional for development - geospatial queries won't work
+        logger.warning(
+            "PostGIS not available - geospatial features disabled. "
+            "Install PostGIS for full functionality.",
+            error=str(e)
+        )
+        try:
+            dbapi_connection.rollback()
+        except Exception:
+            pass
     finally:
         cursor.close()
 

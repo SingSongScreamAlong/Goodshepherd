@@ -8,7 +8,13 @@ Create Date: 2025-11-24
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-import geoalchemy2
+
+# Try to import geoalchemy2, make it optional
+try:
+    import geoalchemy2
+    HAS_GEOALCHEMY = True
+except ImportError:
+    HAS_GEOALCHEMY = False
 
 # revision identifiers, used by Alembic.
 revision = '001'
@@ -18,8 +24,20 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Enable PostGIS extension
-    op.execute('CREATE EXTENSION IF NOT EXISTS postgis;')
+    # Check if PostGIS extension is available (without aborting transaction if not)
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'"
+    ))
+    postgis_available = result.fetchone() is not None
+    
+    if postgis_available:
+        try:
+            op.execute('CREATE EXTENSION IF NOT EXISTS postgis;')
+        except Exception:
+            postgis_available = False
+    else:
+        print("PostGIS extension not installed - geospatial features disabled")
 
     # Create enum types
     op.execute("CREATE TYPE roleenum AS ENUM ('admin', 'analyst', 'viewer');")
@@ -88,7 +106,13 @@ def upgrade() -> None:
     )
     op.create_index('ix_sources_name', 'sources', ['name'])
 
-    # Create events table
+    # Create events table - use Text for location_point if PostGIS unavailable
+    location_point_column = (
+        geoalchemy2.Geometry(geometry_type='POINT', srid=4326) 
+        if HAS_GEOALCHEMY and postgis_available 
+        else sa.Text()
+    )
+    
     op.create_table(
         'events',
         sa.Column('event_id', postgresql.UUID(as_uuid=True), primary_key=True),
@@ -97,7 +121,7 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.Column('summary', sa.String(500), nullable=False),
         sa.Column('full_text', sa.Text(), nullable=True),
-        sa.Column('location_point', geoalchemy2.Geometry(geometry_type='POINT', srid=4326), nullable=True),
+        sa.Column('location_point', location_point_column, nullable=True),
         sa.Column('location_lat', sa.Float(), nullable=True),
         sa.Column('location_lon', sa.Float(), nullable=True),
         sa.Column('location_name', sa.String(255), nullable=True),
@@ -120,7 +144,10 @@ def upgrade() -> None:
     op.create_index('ix_events_category', 'events', ['category'])
     op.create_index('ix_events_location_name', 'events', ['location_name'])
     op.create_index('ix_events_cluster_id', 'events', ['cluster_id'])
-    op.create_index('idx_events_location_point', 'events', ['location_point'], postgresql_using='gist')
+    
+    # Only create spatial index if PostGIS is available
+    if HAS_GEOALCHEMY and postgis_available:
+        op.create_index('idx_events_location_point', 'events', ['location_point'], postgresql_using='gist')
 
 
 def downgrade() -> None:

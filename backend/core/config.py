@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     allowed_hosts: str = Field(default="localhost,127.0.0.1")
     rate_limit_per_minute: int = Field(default=60)
 
+    # Environment
+    environment: str = Field(default="development")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

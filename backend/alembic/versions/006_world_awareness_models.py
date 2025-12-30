@@ -20,7 +20,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision = '006_world_awareness_models'
-down_revision = '005_add_organization_settings'
+down_revision = '005'
 branch_labels = None
 depends_on = None
 

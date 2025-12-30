@@ -11,22 +11,25 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Add backend directory to path
-backend_path = Path(__file__).parent.parent
+# Add project root (parent of backend) to path for imports
+backend_path = Path(__file__).parent.parent  # backend/
+project_root = backend_path.parent  # Goodshepherd/
+sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(backend_path))
 
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv(backend_path / ".env")
 
-# Import models and Base
-from backend.core.database import Base
-from backend.core.config import settings
-# Import all models to ensure they're registered with Base
-from backend.models import (
-    User, Organization, Event, Source,
-    user_organization
-)
+# Import models and Base - try both import styles
+try:
+    from backend.core.database import Base
+    from backend.core.config import settings
+    from backend.models import User, Organization, Event, Source, user_organization
+except ImportError:
+    from core.database import Base
+    from core.config import settings
+    from models import User, Organization, Event, Source, user_organization
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

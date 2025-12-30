@@ -8,7 +8,7 @@ from datetime import datetime
 import uuid
 import enum
 
-from core.database import Base
+from backend.core.database import Base
 
 
 class DossierType(str, enum.Enum):
