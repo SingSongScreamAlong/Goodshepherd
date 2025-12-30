@@ -17,7 +17,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Helper for API calls
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers: {
