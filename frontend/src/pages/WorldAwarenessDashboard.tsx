@@ -1,5 +1,6 @@
 /**
  * World Awareness Dashboard - Live Operational Picture.
+ * Tactical dark theme with glass-morphism cards and status indicators.
  */
 import { useRegions } from '../hooks/useWorldAwareness';
 import RegionStatusWidget from '../components/RegionStatusWidget';
@@ -11,11 +12,15 @@ export default function WorldAwarenessDashboard() {
     const { byStatus, isLoading } = useRegions();
 
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto animate-fade-in">
             {/* Header */}
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">World Situational Awareness</h1>
-                <p className="text-gray-600">Live operational picture with region states and verification status</p>
+            <div className="page-header">
+                <h1 className="text-3xl font-bold text-white mb-2">
+                    World Situational Awareness
+                </h1>
+                <p className="text-gray-400">
+                    Live operational picture with region states and verification status
+                </p>
             </div>
 
             {/* Status Overview */}
@@ -67,20 +72,34 @@ export default function WorldAwarenessDashboard() {
             </div>
 
             {/* Legend */}
-            <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Understanding the Dashboard</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-gray-600">
+            <div className="glass-card p-5">
+                <h3 className="text-sm font-semibold text-gray-300 mb-4 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Understanding the Dashboard
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-xs text-gray-400">
                     <div>
-                        <span className="font-medium text-gray-900">Region Status:</span>
-                        <ul className="mt-1 space-y-1">
-                            <li><span className="text-green-600">●</span> Green = Stable</li>
-                            <li><span className="text-yellow-600">●</span> Yellow = Elevated</li>
-                            <li><span className="text-red-600">●</span> Red = Critical</li>
+                        <span className="font-medium text-gray-200 block mb-2">Region Status</span>
+                        <ul className="space-y-1.5">
+                            <li className="flex items-center">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 shadow-sm shadow-emerald-500/50" />
+                                Green = Stable
+                            </li>
+                            <li className="flex items-center">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 mr-2 shadow-sm shadow-amber-500/50" />
+                                Yellow = Elevated
+                            </li>
+                            <li className="flex items-center">
+                                <span className="w-2 h-2 rounded-full bg-red-500 mr-2 shadow-sm shadow-red-500/50" />
+                                Red = Critical
+                            </li>
                         </ul>
                     </div>
                     <div>
-                        <span className="font-medium text-gray-900">Verification Status:</span>
-                        <ul className="mt-1 space-y-1">
+                        <span className="font-medium text-gray-200 block mb-2">Verification Status</span>
+                        <ul className="space-y-1.5">
                             <li>Unverified = &lt;40% confidence</li>
                             <li>Developing = 40-74%</li>
                             <li>Corroborated = 75%+</li>
@@ -88,17 +107,29 @@ export default function WorldAwarenessDashboard() {
                         </ul>
                     </div>
                     <div>
-                        <span className="font-medium text-gray-900">Severity Levels:</span>
-                        <ul className="mt-1 space-y-1">
-                            <li><span className="bg-red-600 text-white px-1 rounded text-[10px]">CRITICAL</span> Immediate</li>
-                            <li><span className="bg-orange-500 text-white px-1 rounded text-[10px]">HIGH</span> Urgent</li>
-                            <li><span className="bg-yellow-500 text-white px-1 rounded text-[10px]">MEDIUM</span> Monitor</li>
-                            <li><span className="bg-green-500 text-white px-1 rounded text-[10px]">LOW</span> Routine</li>
+                        <span className="font-medium text-gray-200 block mb-2">Severity Levels</span>
+                        <ul className="space-y-1.5">
+                            <li className="flex items-center">
+                                <span className="status-badge status-critical mr-2 text-[10px] py-0">CRITICAL</span>
+                                Immediate
+                            </li>
+                            <li className="flex items-center">
+                                <span className="status-badge status-elevated mr-2 text-[10px] py-0">HIGH</span>
+                                Urgent
+                            </li>
+                            <li className="flex items-center">
+                                <span className="status-badge status-warning mr-2 text-[10px] py-0">MEDIUM</span>
+                                Monitor
+                            </li>
+                            <li className="flex items-center">
+                                <span className="status-badge status-stable mr-2 text-[10px] py-0">LOW</span>
+                                Routine
+                            </li>
                         </ul>
                     </div>
                     <div>
-                        <span className="font-medium text-gray-900">Indicators:</span>
-                        <ul className="mt-1 space-y-1">
+                        <span className="font-medium text-gray-200 block mb-2">Indicators</span>
+                        <ul className="space-y-1.5">
                             <li>Concerning = Value &gt;70</li>
                             <li>Trending ↑ = +5 in 7 days</li>
                             <li>Delta shows 7-day change</li>

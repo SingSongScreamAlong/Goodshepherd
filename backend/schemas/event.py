@@ -61,4 +61,4 @@ class EventFilters(BaseModel):
     end_date: Optional[datetime] = None
     min_relevance: Optional[float] = Field(None, ge=0.0, le=1.0)
     page: int = Field(default=1, ge=1)
-    page_size: int = Field(default=20, ge=1, le=100)
+    page_size: int = Field(default=20, ge=1, le=1000)

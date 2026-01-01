@@ -1,5 +1,6 @@
 /**
  * StatCard component - displays a metric with label and optional trend.
+ * Dark theme with glass-morphism and glow effects.
  */
 interface StatCardProps {
   label: string | React.ReactNode;
@@ -13,33 +14,42 @@ interface StatCardProps {
 }
 
 export default function StatCard({ label, value, icon, trend, color = 'blue' }: StatCardProps) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    red: 'bg-red-50 text-red-600',
-    purple: 'bg-purple-50 text-purple-600',
-    gray: 'bg-gray-50 text-gray-600',
+  const iconColorClasses = {
+    blue: 'bg-blue-500/20 text-blue-400 shadow-blue-500/30',
+    green: 'bg-emerald-500/20 text-emerald-400 shadow-emerald-500/30',
+    yellow: 'bg-amber-500/20 text-amber-400 shadow-amber-500/30',
+    red: 'bg-red-500/20 text-red-400 shadow-red-500/30',
+    purple: 'bg-purple-500/20 text-purple-400 shadow-purple-500/30',
+    gray: 'bg-gray-500/20 text-gray-400 shadow-gray-500/30',
   };
 
   const trendColors = {
-    up: 'text-green-600',
-    down: 'text-red-600',
-    neutral: 'text-gray-600',
+    up: 'text-emerald-400',
+    down: 'text-red-400',
+    neutral: 'text-gray-400',
+  };
+
+  const valueColors = {
+    blue: 'text-white',
+    green: 'text-emerald-400',
+    yellow: 'text-amber-400',
+    red: 'text-red-400',
+    purple: 'text-purple-400',
+    gray: 'text-gray-300',
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-600">{label}</h3>
+    <div className="glass-card-hover p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-medium text-gray-400">{label}</h3>
         {icon && (
-          <div className={`p-3 rounded-full ${colorClasses[color]}`}>
+          <div className={`p-2.5 rounded-lg shadow-lg ${iconColorClasses[color]}`}>
             {icon}
           </div>
         )}
       </div>
       <div className="flex items-baseline justify-between">
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <p className={`text-3xl font-bold ${valueColors[color]}`}>{value}</p>
         {trend && (
           <div className={`flex items-center text-sm font-medium ${trendColors[trend.direction]}`}>
             {trend.direction === 'up' && (

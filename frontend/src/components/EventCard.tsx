@@ -1,5 +1,6 @@
 /**
  * Event card component for displaying enriched intelligence events.
+ * Dark theme with glass-morphism styling.
  */
 import { useState } from 'react';
 import { Event } from '../types';
@@ -7,9 +8,7 @@ import EventFeedback from './EventFeedback';
 import {
   formatRelativeTime,
   formatDate,
-  getCategoryColor,
   getCategoryLabel,
-  getSentimentColor,
   getSentimentLabel,
   getRelevanceLabel,
   getConfidenceLabel,
@@ -19,50 +18,67 @@ interface EventCardProps {
   event: Event;
 }
 
+const getCategoryColorDark = (category: string) => {
+  const colors: Record<string, string> = {
+    protest: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
+    crime: 'bg-red-500/20 text-red-400 border border-red-500/30',
+    religious_freedom: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
+    cultural_tension: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
+    political: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+    infrastructure: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+    health: 'bg-pink-500/20 text-pink-400 border border-pink-500/30',
+    migration: 'bg-teal-500/20 text-teal-400 border border-teal-500/30',
+    economic: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+    weather: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
+    community_event: 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30',
+  };
+  return colors[category] || 'bg-slate-500/20 text-slate-400 border border-slate-500/30';
+};
+
+const getSentimentColorDark = (sentiment: string) => {
+  switch (sentiment) {
+    case 'positive': return 'bg-emerald-500/20 text-emerald-400';
+    case 'negative': return 'bg-red-500/20 text-red-400';
+    default: return 'bg-slate-500/20 text-slate-400';
+  }
+};
+
 export default function EventCard({ event }: EventCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
+    <div className="glass-card-hover">
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColor(
-                  event.category
-                )}`}
-              >
+              <span className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColorDark(event.category)}`}>
                 {getCategoryLabel(event.category)}
               </span>
 
               {event.sentiment && (
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded ${getSentimentColor(
-                    event.sentiment
-                  )}`}
-                >
+                <span className={`px-2 py-1 text-xs font-medium rounded ${getSentimentColorDark(event.sentiment)}`}>
                   {getSentimentLabel(event.sentiment)}
                 </span>
               )}
             </div>
 
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <h3 className="text-lg font-semibold text-white mb-1">
               {event.summary}
             </h3>
 
-            <div className="flex items-center gap-3 text-sm text-gray-500">
+            <div className="flex items-center gap-3 text-sm text-gray-400">
               <span title={formatDate(event.timestamp)}>
                 {formatRelativeTime(event.timestamp)}
               </span>
 
               {event.location_name && (
                 <>
-                  <span>•</span>
+                  <span className="text-gray-600">•</span>
                   <span className="flex items-center gap-1">
                     <svg
-                      className="w-4 h-4"
+                      className="w-4 h-4 text-gray-500"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -92,7 +108,7 @@ export default function EventCard({ event }: EventCardProps) {
             {event.relevance_score !== undefined && (
               <div className="text-xs">
                 <span className="text-gray-500">Relevance:</span>{' '}
-                <span className="font-medium">
+                <span className="font-medium text-gray-300">
                   {getRelevanceLabel(event.relevance_score)}
                 </span>
               </div>
@@ -100,7 +116,7 @@ export default function EventCard({ event }: EventCardProps) {
             {event.confidence_score !== undefined && (
               <div className="text-xs">
                 <span className="text-gray-500">Confidence:</span>{' '}
-                <span className="font-medium">
+                <span className="font-medium text-gray-300">
                   {getConfidenceLabel(event.confidence_score)}
                 </span>
               </div>
@@ -117,13 +133,13 @@ export default function EventCard({ event }: EventCardProps) {
                 {event.entity_list.locations.slice(0, 5).map((loc, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded"
+                    className="px-2 py-0.5 text-xs bg-blue-500/10 text-blue-400 rounded border border-blue-500/20"
                   >
                     {loc}
                   </span>
                 ))}
                 {event.entity_list.locations.length > 5 && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     +{event.entity_list.locations.length - 5} more
                   </span>
                 )}
@@ -137,13 +153,13 @@ export default function EventCard({ event }: EventCardProps) {
                   {event.entity_list.organizations.slice(0, 5).map((org, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-0.5 text-xs bg-purple-50 text-purple-700 rounded"
+                      className="px-2 py-0.5 text-xs bg-purple-500/10 text-purple-400 rounded border border-purple-500/20"
                     >
                       {org}
                     </span>
                   ))}
                   {event.entity_list.organizations.length > 5 && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-500">
                       +{event.entity_list.organizations.length - 5} more
                     </span>
                   )}
@@ -156,13 +172,13 @@ export default function EventCard({ event }: EventCardProps) {
                 {event.entity_list.topics.slice(0, 5).map((topic, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded"
+                    className="px-2 py-0.5 text-xs bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20"
                   >
                     {topic}
                   </span>
                 ))}
                 {event.entity_list.topics.length > 5 && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     +{event.entity_list.topics.length - 5} more
                   </span>
                 )}
@@ -175,7 +191,7 @@ export default function EventCard({ event }: EventCardProps) {
         {event.full_text && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors"
           >
             {isExpanded ? 'Show less' : 'Show more'}
           </button>
@@ -183,8 +199,8 @@ export default function EventCard({ event }: EventCardProps) {
 
         {/* Expanded content */}
         {isExpanded && event.full_text && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+          <div className="mt-3 pt-3 border-t border-white/5">
+            <p className="text-sm text-gray-300 whitespace-pre-wrap">
               {event.full_text}
             </p>
 
@@ -199,7 +215,7 @@ export default function EventCard({ event }: EventCardProps) {
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-700 hover:underline"
+                        className="text-primary-400 hover:text-primary-300 hover:underline transition-colors"
                       >
                         {source.name}
                       </a>
@@ -213,16 +229,16 @@ export default function EventCard({ event }: EventCardProps) {
 
         {/* Cluster indicator */}
         {event.cluster_id && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="mt-3 pt-3 border-t border-white/5">
             <p className="text-xs text-gray-500">
-              <span className="font-medium">Multi-source event</span> - Multiple
+              <span className="font-medium text-gray-400">Multi-source event</span> — Multiple
               reports about this incident
             </p>
           </div>
         )}
 
         {/* Footer with feedback */}
-        <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end">
+        <div className="mt-3 pt-3 border-t border-white/5 flex justify-end">
           <EventFeedback eventId={event.event_id} />
         </div>
       </div>

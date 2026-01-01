@@ -96,7 +96,7 @@ export default function MapView({ events, center = [50.8503, 4.3517], zoom = 5 }
   );
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-lg overflow-hidden shadow-lg">
+    <div className="relative w-full h-[600px] rounded-lg overflow-hidden shadow-lg">
       <MapContainer
         center={center}
         zoom={zoom}

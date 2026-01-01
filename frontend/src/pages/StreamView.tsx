@@ -1,5 +1,6 @@
 /**
  * Stream View - Main timeline of intelligence events.
+ * Dark theme with glass-morphism cards.
  */
 import { useState } from 'react';
 import { useEvents } from '../hooks/useEvents';
@@ -31,12 +32,12 @@ export default function StreamView() {
   const hasMore = (filters.page || 1) < totalPages;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="max-w-4xl mx-auto animate-fade-in">
+      <div className="page-header">
+        <h1 className="text-3xl font-bold text-white mb-2">
           Event Stream
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-400">
           Real-time intelligence events from across Europe
         </p>
       </div>
@@ -46,16 +47,16 @@ export default function StreamView() {
       {/* Loading state */}
       {isLoading && events.length === 0 && (
         <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-500 border-t-transparent"></div>
         </div>
       )}
 
       {/* Error state */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="glass-card border-red-500/30 p-4 mb-6">
           <div className="flex items-center">
             <svg
-              className="w-5 h-5 text-red-600 mr-2"
+              className="w-5 h-5 text-red-400 mr-2"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -67,7 +68,7 @@ export default function StreamView() {
                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         </div>
       )}
@@ -84,7 +85,7 @@ export default function StreamView() {
       {events.length > 0 && (
         <>
           {/* Results summary */}
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-gray-400">
             Showing {events.length} of {total} events
             {filters.page && filters.page > 1 && (
               <> (Page {filters.page} of {totalPages})</>
@@ -104,7 +105,7 @@ export default function StreamView() {
               <button
                 onClick={handleLoadMore}
                 disabled={isLoading}
-                className="px-6 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Loading...' : 'Load More'}
               </button>

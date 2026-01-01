@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # API Configuration
     api_host: str = Field(default="0.0.0.0")
     api_port: int = Field(default=8000)
-    cors_origins: str = Field(default="http://localhost:3000,http://localhost:5173")
+    cors_origins: str = Field(default="http://localhost:3000,http://localhost:5173,http://localhost:5175")
 
     # LLM Configuration
     openai_api_key: str = Field(default="")

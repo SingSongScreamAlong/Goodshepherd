@@ -1,5 +1,6 @@
 /**
  * Event filters component.
+ * Dark theme with glass-morphism styling.
  */
 import { EventCategory, Sentiment, EventFilters as EventFiltersType } from '../types';
 import { getCategoryLabel } from '../utils/formatting';
@@ -73,13 +74,18 @@ export default function EventFilters({ filters, onChange }: EventFiltersProps) {
     filters.min_relevance !== undefined;
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-6">
+    <div className="glass-card p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+        <h3 className="text-lg font-semibold text-white flex items-center">
+          <svg className="w-5 h-5 mr-2 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          Filters
+        </h3>
         {hasActiveFilters && (
           <button
             onClick={handleClearFilters}
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors"
           >
             Clear all
           </button>
@@ -89,13 +95,13 @@ export default function EventFilters({ filters, onChange }: EventFiltersProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Category filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
             Category
           </label>
           <select
             value={filters.category || ''}
             onChange={(e) => handleCategoryChange(e.target.value as EventCategory | '')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            className="input-dark w-full text-sm"
           >
             <option value="">All categories</option>
             {categories.map((cat) => (
@@ -108,13 +114,13 @@ export default function EventFilters({ filters, onChange }: EventFiltersProps) {
 
         {/* Sentiment filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
             Sentiment
           </label>
           <select
             value={filters.sentiment || ''}
             onChange={(e) => handleSentimentChange(e.target.value as Sentiment | '')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            className="input-dark w-full text-sm"
           >
             <option value="">All sentiments</option>
             {sentiments.map((sent) => (
@@ -127,7 +133,7 @@ export default function EventFilters({ filters, onChange }: EventFiltersProps) {
 
         {/* Location filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
             Location
           </label>
           <input
@@ -135,19 +141,19 @@ export default function EventFilters({ filters, onChange }: EventFiltersProps) {
             value={filters.location_name || ''}
             onChange={(e) => handleLocationChange(e.target.value)}
             placeholder="Search location..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            className="input-dark w-full text-sm"
           />
         </div>
 
         {/* Relevance filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1.5">
             Min. Relevance
           </label>
           <select
             value={filters.min_relevance !== undefined ? filters.min_relevance : ''}
             onChange={(e) => handleRelevanceChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            className="input-dark w-full text-sm"
           >
             <option value="">All events</option>
             <option value="0.8">High (0.8+)</option>
